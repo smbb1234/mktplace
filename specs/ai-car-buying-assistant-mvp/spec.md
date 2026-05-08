@@ -207,6 +207,8 @@ Admins view new enquiries, contact details, selected car, customer budget, finan
 ## Policies (Data and Behaviour)
 
 - Match Score: Use provided total_match_score and threshold_passed when present; otherwise compute a 0–100 score with weights Budget (50%), Intent (30%), Lifestyle/Family (20%). Default display cutoff: 50/100.
+- Match Score Tie‑breakers: When scores are equal, prefer (1) better budget fit, then (2) lower mileage, then (3) newer registration year, then (4) lower list price.
 - Finance Defaults: If the user doesn’t set deposit/term/rate, use per-car values from Pricing Details. Canonical disclaimer: “All finance figures are examples only and subject to approval. No credit check is performed in this demo.”
-- First Recommendations: Trigger after collecting intent and monthly budget (minimum). Show 1–3 cars; if none meet criteria, show nearest alternatives and suggest relaxing constraints.
+- First Recommendations: Trigger after collecting intent and monthly budget (minimum). Always show up to 3 cars (initial and refreshed). If none meet criteria, show nearest alternatives and suggest relaxing constraints.
 - Preference Changes: Apply a 300ms debounce to refresh; when no results remain, suggest targeted relaxations. Shortlist and comparison persist across changes; items that no longer fit are flagged accordingly.
+	- Visibility for flagged items: display a clear “No longer fits” badge and a brief reason (e.g., “exceeds budget” or “fuel type changed”).
