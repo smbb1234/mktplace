@@ -156,6 +156,8 @@ Admins view new enquiries, contact details, selected car, customer budget, finan
 - FR-011: System MUST maintain a persistent side assistant/chat during browsing, recommendations, comparison, finance view, and enquiry.
 - FR-012: System MUST refresh comparison and shortlist views when underlying preferences or availability change.
 - FR-013: System MUST clearly indicate when data is demo/sample and avoid implying real finance approval.
+- FR-014: System MUST ingest a single CSV file for all required data located at data/dataset.csv; for MVP, parse per-row JSON blobs under columns named Car Inventory Data and Pricing Details to power recommendations and finance examples.
+- FR-015: Until real images are provided, System MUST display a single standard dummy image for all vehicles in recommendations, details, comparison, and shortlist views.
 
 ### Key Entities
 
@@ -174,6 +176,8 @@ Admins view new enquiries, contact details, selected car, customer budget, finan
 - SC-002: Changing a single preference updates recommendations within 1 second (local run, mid-spec laptop).
 - SC-003: 90% of demo users can compare 2 cars and reach an enquiry within 5 minutes.
 - SC-004: 100% of finance displays include the indicative-only disclaimer.
+- SC-005: First recommendations appear within 3 conversational turns after greeting using inputs of at least intent and monthly budget.
+- SC-006: When preferences change, updated recommendations render within 1 second on a local machine (300ms debounce allowed).
 
 ## MVP Boundaries
 
@@ -193,8 +197,16 @@ Admins view new enquiries, contact details, selected car, customer budget, finan
 
 ## Assumptions
 
-- A single CSV file contains the demo inventory and provides image file references.
-- Local image files are packaged with the project; missing images use a default placeholder.
+- A single CSV file contains all necessary data at data/dataset.csv; each row includes JSON blobs labeled Car Inventory Data and Pricing Details. Other blobs (e.g., Match Score Logic, Rules) may be ignored in the MVP unless explicitly referenced.
+- Vehicle images are not available at this stage; the UI will use one standard dummy image for all vehicles until images are supplied.
+- Placeholder image path is defined in a JSON schema file at data/schema.json, with assets.placeholder_image set to assets/placeholder.svg.
 - A simple, local persistence mechanism (e.g., file-based) is sufficient for storing enquiries.
 - The AI assistant can access the CSV data in-memory for generating recommendations and explanations.
 - Users have basic desktop browser access; no mobile optimization guarantees for MVP.
+
+## Policies (Data and Behaviour)
+
+- Match Score: Use provided total_match_score and threshold_passed when present; otherwise compute a 0–100 score with weights Budget (50%), Intent (30%), Lifestyle/Family (20%). Default display cutoff: 50/100.
+- Finance Defaults: If the user doesn’t set deposit/term/rate, use per-car values from Pricing Details. Canonical disclaimer: “All finance figures are examples only and subject to approval. No credit check is performed in this demo.”
+- First Recommendations: Trigger after collecting intent and monthly budget (minimum). Show 1–3 cars; if none meet criteria, show nearest alternatives and suggest relaxing constraints.
+- Preference Changes: Apply a 300ms debounce to refresh; when no results remain, suggest targeted relaxations. Shortlist and comparison persist across changes; items that no longer fit are flagged accordingly.
