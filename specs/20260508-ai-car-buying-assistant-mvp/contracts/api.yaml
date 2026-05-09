@@ -1,0 +1,444 @@
+openapi: 3.1.0
+info:
+  title: AI Car Buying Assistant MVP API
+  version: 0.1.0
+  description: |
+    Contract for the local-only AI Car Buying Assistant MVP. All finance values are demo-only.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/v1/sessions:
+    post:
+      summary: Create a customer session
+      operationId: createSession
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /api/v1/chat/messages:
+    post:
+      summary: Send a customer message and receive assistant output
+      operationId: sendChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageRequest'
+      responses:
+        '200':
+          description: Assistant reply with optional UI directives and recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageResponse'
+  /api/v1/recommendations/query:
+    post:
+      summary: Fetch recommendations for current preferences
+      operationId: queryRecommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationQueryRequest'
+      responses:
+        '200':
+          description: Recommendation set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+  /api/v1/recommendations/refine:
+    post:
+      summary: Apply preference changes and refresh recommendations
+      operationId: refineRecommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRefineRequest'
+      responses:
+        '200':
+          description: Updated recommendation set with change summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+  /api/v1/comparisons:
+    post:
+      summary: Create or replace a vehicle comparison set
+      operationId: createComparison
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComparisonRequest'
+      responses:
+        '200':
+          description: Comparison details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComparisonResponse'
+  /api/v1/finance-estimates:
+    post:
+      summary: Generate an indicative finance estimate
+      operationId: generateFinanceEstimate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinanceEstimateRequest'
+      responses:
+        '200':
+          description: Finance estimate response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceEstimateResponse'
+  /api/v1/enquiries:
+    post:
+      summary: Submit a customer enquiry
+      operationId: createEnquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnquiryRequest'
+      responses:
+        '201':
+          description: Enquiry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnquiryResponse'
+  /api/v1/admin/leads:
+    get:
+      summary: List leads for the admin dashboard
+      operationId: listLeads
+      responses:
+        '200':
+          description: Lead list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LeadSummary'
+  /api/v1/admin/leads/{leadId}:
+    get:
+      summary: Fetch a lead detail record
+      operationId: getLead
+      parameters:
+        - in: path
+          name: leadId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lead detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+    patch:
+      summary: Update lead status or notes
+      operationId: updateLead
+      parameters:
+        - in: path
+          name: leadId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadUpdateRequest'
+      responses:
+        '200':
+          description: Lead updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+components:
+  schemas:
+    SessionResponse:
+      type: object
+      required: [session_id, stage]
+      properties:
+        session_id:
+          type: string
+        stage:
+          type: string
+        preferences:
+          $ref: '#/components/schemas/SessionPreferences'
+    SessionPreferences:
+      type: object
+      properties:
+        buying_intent:
+          type: string
+        monthly_budget_gbp:
+          type: number
+        deposit_gbp:
+          type: number
+        fuel_preference:
+          type: string
+        transmission_preference:
+          type: string
+        family_size:
+          type: integer
+    ChatMessageRequest:
+      type: object
+      required: [session_id, message]
+      properties:
+        session_id:
+          type: string
+        message:
+          type: string
+    ChatMessageResponse:
+      type: object
+      required: [session_id, assistant_message, ui_actions]
+      properties:
+        session_id:
+          type: string
+        assistant_message:
+          type: string
+        ui_actions:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationCard'
+    RecommendationQueryRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id:
+          type: string
+        preferences:
+          $ref: '#/components/schemas/SessionPreferences'
+    RecommendationRefineRequest:
+      type: object
+      required: [session_id, preference_changes]
+      properties:
+        session_id:
+          type: string
+        preference_changes:
+          type: object
+          additionalProperties: true
+    RecommendationResponse:
+      type: object
+      required: [session_id, recommendations]
+      properties:
+        session_id:
+          type: string
+        change_summary:
+          type: string
+        recommendations:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/RecommendationCard'
+        no_results_guidance:
+          type: string
+    RecommendationCard:
+      type: object
+      required:
+        [vehicle_id, title, price_gbp, monthly_estimate_gbp, match_score, explanation, image_path, finance_disclaimer]
+      properties:
+        vehicle_id:
+          type: string
+        title:
+          type: string
+        price_gbp:
+          type: number
+        monthly_estimate_gbp:
+          type: number
+        match_score:
+          type: integer
+        explanation:
+          type: string
+        image_path:
+          type: string
+        is_placeholder_image:
+          type: boolean
+        finance_disclaimer:
+          type: string
+    ComparisonRequest:
+      type: object
+      required: [session_id, vehicle_ids]
+      properties:
+        session_id:
+          type: string
+        vehicle_ids:
+          type: array
+          minItems: 2
+          maxItems: 3
+          items:
+            type: string
+    ComparisonResponse:
+      type: object
+      required: [session_id, items]
+      properties:
+        session_id:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              vehicle_id:
+                type: string
+              price_gbp:
+                type: number
+              monthly_estimate_gbp:
+                type: number
+              mileage:
+                type: integer
+              fuel_type:
+                type: string
+              transmission:
+                type: string
+              body_type:
+                type: string
+              suitability_note:
+                type: string
+              running_cost_note:
+                type: string
+              value_note:
+                type: string
+    FinanceEstimateRequest:
+      type: object
+      required: [session_id, vehicle_id]
+      properties:
+        session_id:
+          type: string
+        vehicle_id:
+          type: string
+        deposit_gbp:
+          type: number
+        term_months:
+          type: integer
+    FinanceEstimateResponse:
+      type: object
+      required: [vehicle_id, estimated_monthly_gbp, disclaimer]
+      properties:
+        vehicle_id:
+          type: string
+        list_price_gbp:
+          type: number
+        deposit_gbp:
+          type: number
+        term_months:
+          type: integer
+        apr_percent:
+          type: number
+        estimated_monthly_gbp:
+          type: number
+        disclaimer:
+          type: string
+    EnquiryRequest:
+      type: object
+      required:
+        [session_id, vehicle_id, full_name, email, phone, preferred_contact_method]
+      properties:
+        session_id:
+          type: string
+        vehicle_id:
+          type: string
+        full_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        preferred_contact_method:
+          type: string
+        preferred_contact_time:
+          type: string
+        monthly_budget_gbp:
+          type: number
+        deposit_gbp:
+          type: number
+        buying_timeframe:
+          type: string
+    EnquiryResponse:
+      type: object
+      required: [enquiry_id, status, confirmation_message]
+      properties:
+        enquiry_id:
+          type: string
+        status:
+          type: string
+        confirmation_message:
+          type: string
+        summary_id:
+          type: string
+    LeadSummary:
+      type: object
+      properties:
+        lead_id:
+          type: string
+        customer_name:
+          type: string
+        selected_vehicle_title:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    LeadDetail:
+      type: object
+      properties:
+        lead_id:
+          type: string
+        status:
+          type: string
+        contact:
+          type: object
+          additionalProperties: true
+        selected_vehicle:
+          type: object
+          additionalProperties: true
+        ai_summary:
+          type: object
+          additionalProperties: true
+        recommended_vehicle_ids:
+          type: array
+          items:
+            type: string
+        compared_vehicle_ids:
+          type: array
+          items:
+            type: string
+        notes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    LeadUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        note:
+          type: string
