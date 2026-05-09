@@ -2,22 +2,22 @@
 
 ## Phase 0: Foundation Setup
 
-- [ ] T001 [P] Create the project skeleton for backend, frontend, shared code, tests, and assets directories.
+- [x] T001 [P] Create the project skeleton for backend, frontend, shared code, tests, and assets directories.
   - Target files: `src/backend/`, `src/frontend/`, `src/shared/`, `tests/`, `assets/vehicles/`
   - Dependencies: none
   - Notes: Keep the folder split aligned with `plan.md`.
 
-- [ ] T002 [P] Add local environment configuration examples and runtime defaults.
+- [x] T002 [P] Add local environment configuration examples and runtime defaults.
   - Target files: `.env.example`, `src/shared/config/settings.py`, `src/backend/core/config.py`, `src/frontend/api_client/config.py`
   - Dependencies: T001
   - Notes: Include OpenAI key, PostgreSQL URL, CSV path, placeholder image path, Streamlit port, FastAPI port, and optional Chroma settings.
 
-- [ ] T003 [P] Update Python dependency manifest for the planned stack.
+- [x] T003 [P] Update Python dependency manifest for the planned stack.
   - Target files: `requirements.txt`
   - Dependencies: T001
   - Notes: Add FastAPI, Streamlit, SQLAlchemy, psycopg, pandas, Pydantic v2, OpenAI SDK, ChromaDB, pytest, httpx, and any lightweight helpers needed for local parsing.
 
-- [ ] T004 [P] Define shared constants for inventory, finance disclaimer, and recommendation thresholds.
+- [x] T004 [P] Define shared constants for inventory, finance disclaimer, and recommendation thresholds.
   - Target files: `src/shared/config/constants.py`
   - Dependencies: T002
   - Notes: Include canonical finance disclaimer text, match score cutoff, minimum recommendation inputs, and debounce timing from `data/schema.json`.
@@ -31,12 +31,12 @@
 
 ### User Story 1 - Local inventory and images
 
-- [ ] T006 [P] Implement CSV inventory loader for JSON-in-cell records.
+- [x] T006 [P] Implement CSV inventory loader for JSON-in-cell records.
   - Target files: `src/backend/services/inventory/csv_loader.py`, `src/backend/models/inventory.py`
   - Dependencies: T002, T004
   - Notes: Parse `data/dataset.csv` columns `Car Inventory Data` and `Pricing Details` into typed models.
 
-- [ ] T007 [P] Implement vehicle image resolution with placeholder fallback.
+- [x] T007 [P] Implement vehicle image resolution with placeholder fallback.
   - Target files: `src/backend/services/inventory/image_resolver.py`, `assets/placeholder.svg`
   - Dependencies: T002, T004, T006
   - Notes: Use placeholder image for MVP unless a local image path exists; expose `is_placeholder_image`.

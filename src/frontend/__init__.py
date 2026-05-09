@@ -1,0 +1,1 @@
+"""Frontend package for the AI Car Buying Assistant MVP."""

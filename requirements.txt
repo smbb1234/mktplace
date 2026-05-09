@@ -31,4 +31,3 @@ tenacity
 
 pytest
 ruff
-REQ
