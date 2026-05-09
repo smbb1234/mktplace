@@ -27,6 +27,39 @@
   - Dependencies: T001, T002, T003, T004
   - Notes: Smoke-check directory layout and settings import resolution.
 
+## Docker Compose: Dev runtime (required)
+
+These tasks make Docker Compose the default local runtime and ensure source mounts allow live editing in VS Code.
+
+- [ ] T070 Create `.env.docker.example` and make Compose use `.env.docker` for container runtimes.
+  - Target files: `.env.docker.example`, `docker-compose.yml`
+  - Dependencies: T002
+  - Notes: `.env.docker` contains container hostnames (postgres, chroma, backend) and in-container paths such as `/app/data` and `/app/assets`.
+
+- [ ] T071 Ensure Compose service volume mounts expose source code, `./data` and `./assets` into containers.
+  - Target files: `docker-compose.yml`, `docker/Dockerfile.backend`, `docker/Dockerfile.frontend`
+  - Dependencies: T001, T070
+  - Notes: Volumes should enable live code edits from VS Code with `uvicorn --reload` and Streamlit auto-reload.
+
+- [x] T072 Add developer helper scripts for Docker Compose: `scripts/docker-up.sh`, `scripts/docker-down.sh`.
+  - Target files: `scripts/docker-up.sh`, `scripts/docker-down.sh`
+  - Dependencies: T070, T071
+  - Notes: Scripts should copy `.env.docker.example` to `.env.docker` if missing, then run `docker compose up -d --build` or `docker compose down` respectively.
+
+- [x] T073 Add a small helper to run DB initialization in the backend container: `scripts/init_db_container.sh`.
+  - Target files: `scripts/init_db_container.sh`
+  - Dependencies: T072, T011, T013
+  - Notes: Script runs `docker compose exec backend python -m src.backend.scripts.init_db` and reports success/failure.
+
+- [ ] T074 Update README and Quickstart to document Docker-first workflow and live-edit behaviour.
+  - Target files: `README.md`, `.env.docker.example`
+  - Dependencies: T070, T071, T072
+
+- [ ] T075 Validate Docker stack: `docker compose up -d --build` and verify `http://localhost:8501` and `http://localhost:8000/health` respond.
+  - Target files: none (manual validation)
+  - Dependencies: T070, T071, T072, T073
+  - Notes: This is a manual validation task; automation can be added later.
+
 ## Phase 1: Local Data and Persistence Foundation
 
 ### User Story 1 - Local inventory and images
@@ -41,7 +74,7 @@
   - Dependencies: T002, T004, T006
   - Notes: Use placeholder image for MVP unless a local image path exists; expose `is_placeholder_image`.
 
-- [ ] T008 Add inventory normalization and caching service.
+- [x] T008 Add inventory normalization and caching service.
   - Target files: `src/backend/services/inventory/catalog.py`, `src/backend/services/inventory/__init__.py`
   - Dependencies: T006, T007
   - Notes: Provide in-memory inventory lookup, vehicle-by-id access, and filtered query helpers.
@@ -53,12 +86,12 @@
 
 ### User Story 2 - PostgreSQL persistence
 
-- [ ] T010 [P] Define PostgreSQL database models and enums.
+- [x] T010 [P] Define PostgreSQL database models and enums.
   - Target files: `src/backend/models/session.py`, `src/backend/models/leads.py`, `src/backend/models/finance.py`, `src/backend/models/common.py`
   - Dependencies: T002, T004
   - Notes: Model sessions, preferences, shortlist, comparisons, enquiries, status history, notes, and AI summaries.
 
-- [ ] T011 [P] Implement database session and engine configuration.
+- [x] T011 [P] Implement database session and engine configuration.
   - Target files: `src/backend/core/database.py`, `src/backend/core/__init__.py`
   - Dependencies: T002, T010
   - Notes: Configure SQLAlchemy/psycopg for local PostgreSQL and provide session lifecycle helpers.
