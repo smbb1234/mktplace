@@ -83,10 +83,11 @@ def check_portainer() -> dict:
 def check_chroma() -> dict:
     # Try heartbeat endpoint first
     base = "http://localhost:8001"
-    for path in ("/api/v1/heartbeat", "/api/v1", "/"):
+    for path in ("/api/v1/heartbeat", "/api/v1", "/api/health", "/"):
         url = base + path
         try:
-            resp = wait_for_http(url, timeout_s=60)
+            # allow longer warmup for Chroma
+            resp = wait_for_http(url, timeout_s=120)
             # Any 200/JSON is acceptable as proof of life
             ok = 200 <= resp.status_code < 400
             try:
