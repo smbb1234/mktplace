@@ -20,6 +20,9 @@ class BackendClient:
     def post_chat(self, payload: dict) -> Any:
         return requests.post(f"{self.base}/chat/message", json=payload).json()
 
+    def create_enquiry(self, payload: dict) -> Any:
+        return requests.post(f"{self.base}/enquiries/", json=payload)
+
     def get_recommendations(self, session_id: str | None = None) -> Any:
         params = {"session_id": session_id} if session_id else {}
         return requests.get(f"{self.base}/recommendations/from_session", params=params).json()
