@@ -66,12 +66,16 @@ input, textarea {
   border-color: var(--border) !important;
 }
 
-.app-shell {
-  display: grid;
-  grid-template-columns: 104px minmax(420px, 460px) minmax(520px, 1fr);
-  gap: 1.35rem;
-  min-height: calc(100vh - 2.4rem);
-  align-items: stretch;
+[data-testid="column"] {
+  align-self: stretch;
+}
+
+[data-testid="column"] > div {
+  height: 100%;
+}
+
+[data-testid="column"] [data-testid="stVerticalBlock"] {
+  align-content: flex-start;
 }
 
 .glass-card {
@@ -429,7 +433,6 @@ def _load_recommendations(session_id: str) -> tuple[list[dict], bool]:
 
 
 def _render_chat_panel() -> None:
-    st.markdown('<section class="glass-card chat-card">', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="panel-heading">
@@ -443,7 +446,6 @@ def _render_chat_panel() -> None:
         unsafe_allow_html=True,
     )
     chat_panel()
-    st.markdown("</section>", unsafe_allow_html=True)
 
 
 def _render_recommendations_panel(session_id: str) -> None:
@@ -454,7 +456,6 @@ def _render_recommendations_panel(session_id: str) -> None:
     recs, backend_available = _load_recommendations(session_id)
     status = "Live recommendations" if backend_available else "Offline preview"
 
-    st.markdown('<section class="glass-card recommendation-card">', unsafe_allow_html=True)
     st.markdown(
         f"""
         <div class="panel-heading">
@@ -476,7 +477,6 @@ def _render_recommendations_panel(session_id: str) -> None:
         )
     render_recommendation_cards(recs[:9])
     finance_summary(budget, term, deposit)
-    st.markdown("</section>", unsafe_allow_html=True)
 
 
 def _render_safety_footer() -> None:
@@ -501,14 +501,10 @@ def main():
     with nav_col:
         sidebar_nav(active="Chat")
     with chat_col:
-        st.markdown('<main class="chat-region">', unsafe_allow_html=True)
         _render_title_card()
         _render_chat_panel()
-        st.markdown("</main>", unsafe_allow_html=True)
     with rec_col:
-        st.markdown('<main class="recommendation-region">', unsafe_allow_html=True)
         _render_recommendations_panel(session_id)
-        st.markdown("</main>", unsafe_allow_html=True)
 
     selected_vehicle = st.session_state.get("selected_vehicle_obj")
     if selected_vehicle:

@@ -155,21 +155,36 @@ def chat_panel() -> None:
         cols = st.columns(len(quick_replies))
         for index, reply in enumerate(quick_replies):
             with cols[index]:
-                if st.button(reply, key=f"quick_reply_{reply}"):
-                    _send_quick_reply(reply, session_id)
+                st.button(
+                    reply,
+                    key=f"quick_reply_{reply}",
+                    on_click=_send_quick_reply,
+                    args=(reply, session_id),
+                )
 
     input_cols = st.columns([0.9, 0.1])
     with input_cols[0]:
-        txt = st.text_input(
+        st.text_input(
             "message",
             placeholder="Type your answer...",
             key="chat_input",
             label_visibility="hidden",
         )
     with input_cols[1]:
-        send = st.button("➤", key="chat_send")
-    if send and txt:
-        _send_message(txt, session_id)
+        st.button(
+            "➤",
+            key="chat_send",
+            on_click=_send_input_message,
+            args=(session_id,),
+        )
+
+
+def _send_input_message(session_id: str | None = None) -> None:
+    txt = str(st.session_state.get("chat_input", "")).strip()
+    if not txt:
+        return
+    _send_message(txt, session_id)
+    st.session_state["chat_input"] = ""
 
 
 def _send_quick_reply(txt: str, session_id: str | None = None) -> None:
