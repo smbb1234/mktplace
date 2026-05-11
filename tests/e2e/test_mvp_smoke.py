@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+from src.backend.api import enquiries as enquiries_api
 from src.backend.main import app
-from src.backend.startup import get_catalog
 from src.backend.services.inventory.catalog import get_default_catalog
 
 
 client = TestClient(app)
 
 
-def test_mvp_smoke_flow():
+def test_mvp_smoke_flow(monkeypatch, tmp_path):
     # health
     r = client.get("/health")
     assert r.status_code == 200
@@ -40,14 +40,19 @@ def test_mvp_smoke_flow():
     catalog = client.get("/catalog/")
     assert catalog.status_code == 200
     items = catalog.json()
-    if items:
-        vid = items[0].get("vehicle_id")
-        enquiry = {
-            "vehicle_id": vid,
-            "full_name": "E2E Tester",
-            "email": "e2e@test.com",
-            "phone": "+447700900010",
-        }
-        er = client.post("/enquiries/", json=enquiry)
-        # If local Postgres is unavailable the API may return 500; accept either 201 or 500 for smoke
-        assert er.status_code in (201, 500)
+    assert items
+
+    monkeypatch.setattr(enquiries_api, "OFFLINE_QUEUE", tmp_path / "offline_enquiries.jsonl")
+
+    vid = items[0].get("vehicle_id")
+    enquiry = {
+        "vehicle_id": vid,
+        "full_name": "E2E Tester",
+        "email": "e2e@test.com",
+        "phone": "+447700900010",
+    }
+    er = client.post("/enquiries/", json=enquiry)
+    assert er.status_code in (201, 202)
+    if er.status_code == 202:
+        detail = er.json().get("detail", "").lower()
+        assert "queued" in detail or "accepted" in detail

@@ -3,6 +3,23 @@ from __future__ import annotations
 import streamlit as st
 
 
+RESET_SESSION_STATE_KEYS = (
+    "session_id",
+    "chat_messages",
+    "preferences",
+    "selected_vehicle",
+    "selected_vehicle_obj",
+    "finance_term",
+    "finance_deposit",
+)
+
+
+def reset_session_state(keys: tuple[str, ...] | list[str] | None = None) -> None:
+    """Remove session-scoped UI state so a new buying conversation can start."""
+    for key in keys or RESET_SESSION_STATE_KEYS:
+        st.session_state.pop(key, None)
+
+
 def get_session_id() -> str:
     if "session_id" not in st.session_state:
         st.session_state["session_id"] = "sess-" + str(len(st.session_state))

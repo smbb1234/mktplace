@@ -1,73 +1,200 @@
 from __future__ import annotations
 
+from datetime import datetime
+from html import escape
+from typing import Any
+
 import streamlit as st
-from src.frontend.state.session_state import get_session_id, set_preferences
+
 from src.frontend.api_client.client import BackendClient
+from src.frontend.state.session_state import get_session_id, set_preferences
 
 client = BackendClient()
 
+PREFERENCE_KEYS = {
+    "intent",
+    "monthly_budget",
+    "fuel_type",
+    "transmission",
+    "family_size",
+}
+FUEL_QUICK_REPLIES = ["Petrol", "Diesel", "Hybrid / Electric"]
+TRANSMISSION_QUICK_REPLIES = ["Automatic", "Manual"]
+INITIAL_MESSAGE_TEXTS = [
+    "Hi! I'm your AI car buying assistant.",
+    "I'll help you find the perfect car that fits your needs and budget.",
+    "To get started, what's your monthly budget for the car?",
+]
 
-def _ensure_messages():
-    if 'chat_messages' not in st.session_state:
-        st.session_state['chat_messages'] = [
-            {'role': 'ai', 'text': 'Hi — I am your AI car buying assistant. What is your preferred fuel type?'}
-        ]
+
+def _message_time() -> str:
+    return datetime.now().strftime("%H:%M")
 
 
-def chat_panel():
+def _create_message(
+    role: str,
+    text: str,
+    *,
+    quick_replies: list[str] | None = None,
+    time: str | None = None,
+) -> dict[str, Any]:
+    message: dict[str, Any] = {
+        "role": role,
+        "text": text,
+        "time": time or _message_time(),
+    }
+    if quick_replies:
+        message["quick_replies"] = quick_replies
+    return message
+
+
+def _initial_messages() -> list[dict[str, Any]]:
+    return [_create_message("ai", text) for text in INITIAL_MESSAGE_TEXTS]
+
+
+def _ensure_messages() -> None:
+    if "chat_messages" not in st.session_state:
+        st.session_state["chat_messages"] = _initial_messages()
+
+
+def _extract_preferences(response: Any) -> dict[str, Any]:
+    if not isinstance(response, dict):
+        return {}
+
+    if isinstance(response.get("preferences"), dict):
+        source = response["preferences"]
+    else:
+        source = response
+
+    return {
+        key: source.get(key)
+        for key in PREFERENCE_KEYS
+        if source.get(key) is not None
+    }
+
+
+def _next_ai_message(preferences: dict[str, Any]) -> dict[str, Any]:
+    if not preferences.get("monthly_budget"):
+        return _create_message(
+            "ai",
+            "What's your monthly budget for the car?",
+        )
+
+    if not preferences.get("fuel_type"):
+        return _create_message(
+            "ai",
+            "Great — what fuel type would you prefer?",
+            quick_replies=FUEL_QUICK_REPLIES,
+        )
+
+    if not preferences.get("transmission"):
+        return _create_message(
+            "ai",
+            "Got it. Would you prefer automatic or manual transmission?",
+            quick_replies=TRANSMISSION_QUICK_REPLIES,
+        )
+
+    return _create_message(
+        "ai",
+        "Thanks — I have the key details I need. I'm generating recommendations for you now.",
+    )
+
+
+def _safe_text(value: Any) -> str:
+    return escape(str(value), quote=True)
+
+
+def _render_message(message: dict[str, Any]) -> None:
+    safe_text = _safe_text(message.get("text", ""))
+    safe_time = _safe_text(message.get("time", ""))
+
+    if message.get("role") == "ai":
+        st.markdown(
+            (
+                "<div class='msg-ai'>"
+                "<div class='ai-avatar'>🤖</div>"
+                f"<div><div>{safe_text}</div><div class='msg-time'>{safe_time}</div></div>"
+                "</div>"
+            ),
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"<div class='msg-user'>{safe_text}<div class='msg-time'>{safe_time}</div></div>",
+            unsafe_allow_html=True,
+        )
+
+
+def _latest_quick_replies() -> list[str]:
+    for message in reversed(st.session_state.get("chat_messages", [])):
+        replies = message.get("quick_replies")
+        if message.get("role") == "ai" and replies:
+            return list(replies)
+    return []
+
+
+def chat_panel() -> None:
     _ensure_messages()
     session_id = get_session_id()
 
-    # header inside chat panel
-    st.markdown("<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;'><div style=\"font-size:18px;font-weight:700;\">Conversation</div><div style=\"color:#4F6690;\">Session: {}</div></div>".format(session_id), unsafe_allow_html=True)
+    st.markdown(
+        "<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;'>"
+        "<div style=\"font-size:18px;font-weight:700;\">Conversation</div>"
+        f"<div style=\"color:#4F6690;\">Session: {_safe_text(session_id)}</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    # messages area
     msg_area = st.container()
     with msg_area:
-        for m in st.session_state['chat_messages']:
-            if m['role'] == 'ai':
-                st.markdown(
-                    f"<div class='msg-ai'><div class='ai-avatar'>🤖</div><div>{m['text']}</div></div>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    f"<div class='msg-user'>{m['text']}</div>", unsafe_allow_html=True
-                )
+        for message in st.session_state["chat_messages"]:
+            _render_message(message)
 
-    # quick reply chips (example)
-    cols = st.columns([1, 1, 1])
-    with cols[0]:
-        if st.button('Petrol'):
-            _send_message('Petrol', session_id)
-    with cols[1]:
-        if st.button('Diesel'):
-            _send_message('Diesel', session_id)
-    with cols[2]:
-        if st.button('Hybrid / Electric'):
-            _send_message('Hybrid / Electric', session_id)
+    quick_replies = _latest_quick_replies()
+    if quick_replies:
+        cols = st.columns(len(quick_replies))
+        for index, reply in enumerate(quick_replies):
+            with cols[index]:
+                if st.button(reply, key=f"quick_reply_{reply}"):
+                    _send_quick_reply(reply, session_id)
 
-    # input at bottom: inline input + send icon button
     input_cols = st.columns([0.9, 0.1])
     with input_cols[0]:
-        txt = st.text_input('message', placeholder='Type your answer...', key='chat_input', label_visibility='hidden')
+        txt = st.text_input(
+            "message",
+            placeholder="Type your answer...",
+            key="chat_input",
+            label_visibility="hidden",
+        )
     with input_cols[1]:
-        send = st.button('➤', key='chat_send')
+        send = st.button("➤", key="chat_send")
     if send and txt:
         _send_message(txt, session_id)
 
 
-def _send_message(txt: str, session_id: str | None = None):
-    # append user message
-    st.session_state['chat_messages'].append({'role': 'user', 'text': txt})
+def _send_quick_reply(txt: str, session_id: str | None = None) -> None:
+    _send_message(txt, session_id)
+
+
+def _send_message(
+    txt: str,
+    session_id: str | None = None,
+    backend_client: BackendClient | None = None,
+) -> None:
+    _ensure_messages()
+    active_client = backend_client or client
+
+    st.session_state["chat_messages"].append(_create_message("user", txt))
+
     try:
-        resp = client.post_chat({'session_id': session_id, 'message': txt})
-        ai_text = resp.get('reply') if isinstance(resp, dict) else str(resp)
-        # update preferences if any
-        if isinstance(resp, dict):
-            prefs = {k: v for k, v in resp.items() if k not in ('reply',) and v is not None}
-            if prefs:
-                set_preferences(prefs)
-        st.session_state['chat_messages'].append({'role': 'ai', 'text': ai_text or 'OK'})
+        response = active_client.post_chat({"session_id": session_id, "message": txt})
+        returned_preferences = _extract_preferences(response)
+        if returned_preferences:
+            set_preferences(returned_preferences)
+
+        current_preferences = st.session_state.get("preferences", {})
+        st.session_state["chat_messages"].append(_next_ai_message(current_preferences))
     except Exception:
-        st.session_state['chat_messages'].append({'role': 'ai', 'text': 'Sorry, failed to reach backend.'})
+        st.session_state["chat_messages"].append(
+            _create_message("ai", "Sorry, failed to reach backend.")
+        )

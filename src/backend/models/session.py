@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Enum
+from sqlalchemy import Column, DateTime, String
 
 from src.backend.models.common import Base
 

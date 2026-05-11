@@ -29,7 +29,11 @@ def enquiry_form(default_vehicle_id: str | None = None):
         if not validate_enquiry_form(data):
             return
         try:
-            res = client.post(f"{client.base}/enquiries/", json=data)
-            st.success("Enquiry submitted")
+            res = client.create_enquiry(data)
+            status_code = getattr(res, "status_code", None)
+            if status_code == 202:
+                st.success("已接收，稍后同步。")
+            else:
+                st.success("提交成功。")
         except Exception as e:
             st.error(f"Failed to submit enquiry: {e}")

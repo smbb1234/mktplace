@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     fastapi_port: int = Field(default=8000, alias="FASTAPI_PORT")
     streamlit_host: str = Field(default="127.0.0.1", alias="STREAMLIT_HOST")
     streamlit_port: int = Field(default=8501, alias="STREAMLIT_PORT")
+    admin_token: str = Field(default="", alias="ADMIN_TOKEN")
 
 
 @lru_cache(maxsize=1)

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Iterator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from src.shared.config.settings import get_settings
 
@@ -14,8 +16,6 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 def get_db_session():
     return SessionLocal()
 
-
-from typing import Iterator
 
 
 def get_db() -> Iterator[Session]:

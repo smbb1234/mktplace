@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Body, status
+from fastapi import APIRouter, Depends, HTTPException, status
 import logging
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from typing import Any
 import json
 from pathlib import Path
 
@@ -28,7 +27,7 @@ def create_enquiry(
     payload: EnquiryCreate, repo: LeadsRepository = Depends(_get_repo)
 ) -> EnquiryResponse:
     try:
-        e = repo.create_enquiry(enquiry_data=payload.dict())
+        e = repo.create_enquiry(enquiry_data=payload.model_dump(exclude_none=True))
         return EnquiryResponse(
             enquiry_id=e.enquiry_id,
             vehicle_id=e.vehicle_id,
@@ -43,7 +42,7 @@ def create_enquiry(
         # Queue the enquiry payload to a local file to retry later
         try:
             with OFFLINE_QUEUE.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(payload.dict()) + "\n")
+                fh.write(json.dumps(payload.model_dump(exclude_none=True)) + "\n")
         except Exception:
             logging.exception("Failed to write enquiry to offline queue")
         # Return Accepted to indicate the request was received and queued
