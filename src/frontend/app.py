@@ -6,6 +6,7 @@ from src.frontend.components.chat_panel import chat_panel
 from src.frontend.components.recommendation_cards import render_recommendation_cards
 from src.frontend.components.car_detail import car_detail
 from src.frontend.components.enquiry_form import enquiry_form
+from src.frontend.components.header import render_header
 from src.frontend.components.summary_cards import summary_cards
 from src.frontend.state.session_state import get_preferences, get_session_id
 
@@ -383,31 +384,7 @@ def _render_sidebar() -> None:
 
 
 def _render_title_card() -> None:
-    with st.container():
-        left, right = st.columns([1, 0.22])
-        with left:
-            st.markdown(
-                """
-                <div class="glass-card title-card">
-                  <div class="title-row">
-                    <div class="title-copy">
-                      <h1>AI Car Buying Assistant ✨</h1>
-                      <p>Your personal car expert for smarter recommendations, finance planning,
-                      and confident enquiries.</p>
-                    </div>
-                  </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with right:
-            if st.button("⟳ New Session", use_container_width=True):
-                st.session_state.pop("chat_messages", None)
-                st.session_state.pop("preferences", None)
-                st.session_state.pop("selected_vehicle", None)
-                st.session_state.pop("selected_vehicle_obj", None)
-                st.session_state["session_id"] = f"sess-{len(st.session_state)}"
-                st.rerun()
+    render_header()
 
 
 def _normalise_recommendations(raw_recs: object) -> list[dict]:
