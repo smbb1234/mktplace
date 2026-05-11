@@ -46,29 +46,19 @@ def summary_cards(
         _session_value("finance_deposit", deposit), DEFAULT_DEPOSIT
     )
 
-    st.markdown("<div class='summary-cards'>", unsafe_allow_html=True)
     st.markdown(
         f"""
-        <div class='summary-small'>
-          <div style='font-size:22px;font-weight:700;'>£{resolved_monthly_budget} Monthly Budget</div>
+        <div class='summary-cards'>
+          <div class='summary-small'>
+            <div style='font-size:22px;font-weight:700;'>£{resolved_monthly_budget} Monthly Budget</div>
+          </div>
+          <div class='summary-small'>
+            <div style='font-size:22px;font-weight:700;'>{resolved_term_months} Months Term</div>
+          </div>
+          <div class='summary-small'>
+            <div style='font-size:22px;font-weight:700;'>£{resolved_deposit} Initial Deposit</div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(
-        f"""
-        <div class='summary-small'>
-          <div style='font-size:22px;font-weight:700;'>{resolved_term_months} Months Term</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"""
-        <div class='summary-small'>
-          <div style='font-size:22px;font-weight:700;'>£{resolved_deposit} Initial Deposit</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
