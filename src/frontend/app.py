@@ -4,6 +4,7 @@ import streamlit as st
 from src.frontend.api_client.client import BackendClient
 from src.frontend.components.chat_panel import chat_panel
 from src.frontend.components.recommendation_cards import render_recommendation_cards
+from src.frontend.components.sidebar_nav import sidebar_nav
 from src.frontend.components.car_detail import car_detail
 from src.frontend.components.enquiry_form import enquiry_form
 from src.frontend.components.summary_cards import summary_cards
@@ -364,24 +365,6 @@ def _render_page_css() -> None:
     st.markdown(PAGE_CSS, unsafe_allow_html=True)
 
 
-def _render_sidebar() -> None:
-    st.markdown(
-        """
-        <aside class="glass-card nav-card" aria-label="Primary navigation">
-          <div class="logo-tile">🚗</div>
-          <nav class="nav-stack">
-            <div class="nav-item active"><span>💬</span>Chat</div>
-            <div class="nav-item"><span>✨</span>Recommendations</div>
-            <div class="nav-item"><span>💳</span>Finance</div>
-            <div class="nav-item"><span>♡</span>Shortlist</div>
-            <div class="nav-item"><span>⚙️</span>Settings</div>
-          </nav>
-        </aside>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def _render_title_card() -> None:
     with st.container():
         left, right = st.columns([1, 0.22])
@@ -512,7 +495,7 @@ def main():
 
     nav_col, chat_col, rec_col = st.columns([0.62, 2.8, 5.4], gap="large")
     with nav_col:
-        _render_sidebar()
+        sidebar_nav(active="Chat")
     with chat_col:
         st.markdown('<main class="chat-region">', unsafe_allow_html=True)
         _render_title_card()
