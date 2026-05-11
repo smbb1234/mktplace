@@ -411,7 +411,7 @@ def _render_recommendations_panel(session_id: str) -> None:
     prefs = get_preferences()
     budget = prefs.get("monthly_budget")
     term = st.session_state.get("finance_term", 36)
-    deposit = st.session_state.get("finance_deposit", 1000)
+    deposit = st.session_state.get("finance_deposit", 0)
     recs, backend_available = _load_recommendations(session_id)
     status = "Live recommendations" if backend_available else "Offline preview"
 
@@ -429,7 +429,7 @@ def _render_recommendations_panel(session_id: str) -> None:
         """,
         unsafe_allow_html=True,
     )
-    summary_cards(budget, term, deposit)
+    summary_cards(monthly_budget=budget, term_months=term, deposit=deposit)
     if not backend_available:
         st.info(
             "Backend is not connected yet, so this page is showing the base UI. "
