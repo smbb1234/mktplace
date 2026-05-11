@@ -298,23 +298,23 @@ These tasks make Docker Compose the default local runtime and ensure source moun
 
 ### User Story 10 - Customer-facing assistant workspace
 
-- [ ] T047 [P] Create Streamlit app entrypoint and page routing.
+- [x] T047 [P] Create Streamlit app entrypoint and page routing.
   - Target files: `src/frontend/app.py`, `src/frontend/pages/__init__.py`
   - Dependencies: T002, T018
 
-- [ ] T048 [P] Implement API client wrapper for frontend/backend communication.
+- [x] T048 [P] Implement API client wrapper for frontend/backend communication.
   - Target files: `src/frontend/api_client/client.py`, `src/frontend/api_client/__init__.py`
   - Dependencies: T002, T018, T030, T033, T037, T039, T041, T044
 
-- [ ] T049 Implement persistent assistant sidebar/chat component.
+- [x] T049 Implement persistent assistant sidebar/chat component.
   - Target files: `src/frontend/components/chat_panel.py`, `src/frontend/state/session_state.py`
   - Dependencies: T047, T048
 
-- [ ] T050 Implement recommendation card rendering with image and score.
+- [x] T050 Implement recommendation card rendering with image and score.
   - Target files: `src/frontend/components/recommendation_cards.py`
   - Dependencies: T007, T028, T048
 
-- [ ] T051 Implement finance estimate display with disclaimer.
+- [x] T051 Implement finance estimate display with disclaimer.
   - Target files: `src/frontend/components/finance_panel.py`, `src/frontend/components/finance_disclaimer.py`
   - Dependencies: T034, T048
 

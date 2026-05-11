@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+import requests
+from typing import Any
+from src.shared.config.settings import get_settings
+
+settings = get_settings()
+
+
+class BackendClient:
+    def __init__(self, base_url: str | None = None):
+        self.base = base_url or f"http://{settings.fastapi_host}:{settings.fastapi_port}"
+
+    def health(self) -> Any:
+        return requests.get(f"{self.base}/health").json()
+
+    def list_catalog(self, **params) -> Any:
+        return requests.get(f"{self.base}/catalog/", params=params).json()
+
+    def post_chat(self, payload: dict) -> Any:
+        return requests.post(f"{self.base}/chat/message", json=payload).json()
+
+    def get_recommendations(self, session_id: str | None = None) -> Any:
+        params = {"session_id": session_id} if session_id else {}
+        return requests.get(f"{self.base}/recommendations/from_session", params=params).json()
+
+    def get_finance(self, vehicle_id: str, deposit: float = 0.0, term_months: int = 36) -> Any:
+        return requests.get(f"{self.base}/finance/estimate", params={"vehicle_id": vehicle_id, "deposit": deposit, "term_months": term_months}).json()
