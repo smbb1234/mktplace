@@ -8,7 +8,7 @@
     "format": "json-in-cells"
   },
   "assets": {
-    "placeholder_image": "assets/placeholder.svg"
+    "placeholder_image": "assets/placeholder.png"
   },
   "match_score": {
     "scale": "0-100",

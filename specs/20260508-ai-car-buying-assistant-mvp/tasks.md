@@ -318,6 +318,10 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Target files: `src/frontend/components/finance_panel.py`, `src/frontend/components/finance_disclaimer.py`
   - Dependencies: T034, T048
 
+- [x] T050a Ensure placeholder/dummy image for every vehicle (fallback image used when no specific image available).
+  - Target files: `assets/placeholder.svg`, `src/backend/api/recommendations.py`, `src/frontend/components/recommendation_cards.py`
+  - Notes: Backend attaches `image` and `is_placeholder` fields; frontend renders placeholder when vehicle image not present.
+
 - [x] T052 Add customer UI validation and empty-state handling.
   - Target files: `src/frontend/components/validation.py`, `src/frontend/components/empty_states.py`
   - Dependencies: T049, T050, T051

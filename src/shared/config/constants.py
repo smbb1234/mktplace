@@ -6,7 +6,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_INVENTORY_CSV_PATH = PROJECT_ROOT / "data" / "dataset.csv"
-DEFAULT_PLACEHOLDER_IMAGE_PATH = PROJECT_ROOT / "assets" / "placeholder.svg"
+DEFAULT_PLACEHOLDER_IMAGE_PATH = PROJECT_ROOT / "assets" / "placeholder.png"
 
 FINANCE_DISCLAIMER = (
     "All finance figures are examples only and subject to approval. "
