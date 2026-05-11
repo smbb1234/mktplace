@@ -328,37 +328,37 @@ These tasks make Docker Compose the default local runtime and ensure source moun
 
 ### User Story 11 - Live preference refinement and result refresh
 
-- [ ] T054 Implement preference refinement controls and refresh trigger.
+- [x] T054 Implement preference refinement controls and refresh trigger.
   - Target files: `src/frontend/components/preference_controls.py`
   - Dependencies: T048, T049, T050
 
-- [ ] T055 Implement no-results guidance and relaxation suggestions in the UI.
+- [x] T055 Implement no-results guidance and relaxation suggestions in the UI.
   - Target files: `src/frontend/components/no_results.py`
   - Dependencies: T030, T054
 
-- [ ] T056 Add refinement refresh tests for chat-driven changes.
+- [x] T056 Add refinement refresh tests for chat-driven changes.
   - Target files: `tests/e2e/test_refinement_refresh.py`
   - Dependencies: T054, T055
 
 ### User Story 12 - Car detail, comparison, shortlist, and enquiry UI
 
-- [ ] T057 Implement car detail section for selected recommendation.
+- [x] T057 Implement car detail section for selected recommendation.
   - Target files: `src/frontend/components/car_detail.py`
   - Dependencies: T050, T048
 
-- [ ] T058 Implement 2–3 car comparison section.
+- [x] T058 Implement 2–3 car comparison section.
   - Target files: `src/frontend/components/comparison_view.py`
   - Dependencies: T039, T048
 
-- [ ] T059 Implement shortlist controls and shortlist summary panel.
+- [x] T059 Implement shortlist controls and shortlist summary panel.
   - Target files: `src/frontend/components/shortlist_panel.py`
   - Dependencies: T037, T050, T057
 
-- [ ] T060 Implement enquiry form and submission confirmation.
+- [x] T060 Implement enquiry form and submission confirmation.
   - Target files: `src/frontend/components/enquiry_form.py`
   - Dependencies: T041, T051, T059
 
-- [ ] T061 Add UI validation and submission error handling for comparison, shortlist, and enquiry flows.
+- [x] T061 Add UI validation and submission error handling for comparison, shortlist, and enquiry flows.
   - Target files: `src/frontend/components/validation.py`, `src/frontend/components/errors.py`
   - Dependencies: T057, T058, T059, T060
 

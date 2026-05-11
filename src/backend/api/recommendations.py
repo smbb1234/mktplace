@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Optional
 
 from src.backend.startup import get_catalog
+from src.shared.config.constants import DEFAULT_PLACEHOLDER_IMAGE_PATH
 from src.backend.services.ai.conversation_orchestrator import get_preferences
 from src.backend.services.recommendations.filtering import apply_filters
 from src.backend.services.recommendations.ranker import rank_vehicles
@@ -26,4 +27,12 @@ def recommendations_from_session(session_id: Optional[str] = None, limit: int = 
     for r in ranked:
         vid = r.get("vehicle_id")
         r["explanation"] = build_explanation(prefs, r, pricing.get(vid, {}))
+        # attach resolved image path (backend knows mounted assets)
+        try:
+            img_path, is_placeholder = catalog.resolve_vehicle_image(vid)
+            r["image"] = str(img_path) if img_path else str(DEFAULT_PLACEHOLDER_IMAGE_PATH)
+            r["is_placeholder"] = bool(is_placeholder)
+        except Exception:
+            r["image"] = str(DEFAULT_PLACEHOLDER_IMAGE_PATH)
+            r["is_placeholder"] = True
     return ranked
