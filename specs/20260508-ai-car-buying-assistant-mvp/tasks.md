@@ -22,7 +22,7 @@
   - Dependencies: T002
   - Notes: Include canonical finance disclaimer text, match score cutoff, minimum recommendation inputs, and debounce timing from `data/schema.json`.
 
-- [ ] T005 Validate the project scaffold and configuration paths exist and are importable.
+- [x] T005 Validate the project scaffold and configuration paths exist and are importable.
   - Target files: `src/backend/`, `src/frontend/`, `src/shared/`, `.env.example`
   - Dependencies: T001, T002, T003, T004
   - Notes: Smoke-check directory layout and settings import resolution.
@@ -31,12 +31,12 @@
 
 These tasks make Docker Compose the default local runtime and ensure source mounts allow live editing in VS Code.
 
-- [ ] T070 Create `.env.docker.example` and make Compose use `.env.docker` for container runtimes.
+- [x] T070 Create `.env.docker.example` and make Compose use `.env.docker` for container runtimes.
   - Target files: `.env.docker.example`, `docker-compose.yml`
   - Dependencies: T002
   - Notes: `.env.docker` contains container hostnames (postgres, chroma, backend) and in-container paths such as `/app/data` and `/app/assets`.
 
-- [ ] T071 Ensure Compose service volume mounts expose source code, `./data` and `./assets` into containers.
+- [x] T071 Ensure Compose service volume mounts expose source code, `./data` and `./assets` into containers.
   - Target files: `docker-compose.yml`, `docker/Dockerfile.backend`, `docker/Dockerfile.frontend`
   - Dependencies: T001, T070
   - Notes: Volumes should enable live code edits from VS Code with `uvicorn --reload` and Streamlit auto-reload.
@@ -51,14 +51,24 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Dependencies: T072, T011, T013
   - Notes: Script runs `docker compose exec backend python -m src.backend.scripts.init_db` and reports success/failure.
 
-- [ ] T074 Update README and Quickstart to document Docker-first workflow and live-edit behaviour.
-  - Target files: `README.md`, `.env.docker.example`
-  - Dependencies: T070, T071, T072
+- [x] T074 Update README and Quickstart to document Docker-first workflow and live-edit behaviour.
+  - Target files: `README.md`, `specs/20260508-ai-car-buying-assistant-mvp/quickstart.md`
+  - Dependencies: T070, T071, T072, T076
 
-- [ ] T075 Validate Docker stack: `docker compose up -d --build` and verify `http://localhost:8501` and `http://localhost:8000/health` respond.
-  - Target files: none (manual validation)
-  - Dependencies: T070, T071, T072, T073
-  - Notes: This is a manual validation task; automation can be added later.
+- [x] T075 Add container healthchecks for key services (optional but recommended).
+  - Target files: `docker-compose.yml`
+  - Dependencies: T070, T071
+  - Notes: Define `healthcheck` for `postgres` (pg_isready), `backend` (curl /health), and `chroma` (HTTP heartbeat) to improve `depends_on` readiness.
+
+- [x] T076 Add automated validation script for service connectivity.
+  - Target files: `scripts/validate_stack.py`
+  - Dependencies: T070, T071, T072
+  - Notes: Script should (1) connect to Postgres on `localhost:5433` and run create/read/delete table, (2) check backend `/health`, (3) check Streamlit root, (4) check Chroma heartbeat, (5) check Portainer UI.
+
+- [ ] T077 Validate Docker stack end-to-end (automated + minimal manual spot checks).
+  - Target files: none
+  - Dependencies: T073, T075, T076
+  - Notes: Run `docker compose up -d --build`, then `python scripts/validate_stack.py`; confirm backend health and Streamlit UI render.
 
 ## Phase 1: Local Data and Persistence Foundation
 
@@ -79,7 +89,7 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Dependencies: T006, T007
   - Notes: Provide in-memory inventory lookup, vehicle-by-id access, and filtered query helpers.
 
-- [ ] T009 Add local demo inventory validation against the schema contract.
+- [x] T009 Add local demo inventory validation against the schema contract.
   - Target files: `tests/unit/test_inventory_loader.py`, `tests/unit/test_image_resolver.py`
   - Dependencies: T006, T007, T008
   - Notes: Verify JSON parsing, missing-field handling, and placeholder fallback.
@@ -96,12 +106,12 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Dependencies: T002, T010
   - Notes: Configure SQLAlchemy/psycopg for local PostgreSQL and provide session lifecycle helpers.
 
-- [ ] T012 Implement repository layer for sessions, enquiries, and admin lead updates.
+- [x] T012 Implement repository layer for sessions, enquiries, and admin lead updates.
   - Target files: `src/backend/repositories/session_repo.py`, `src/backend/repositories/enquiry_repo.py`, `src/backend/repositories/lead_repo.py`
   - Dependencies: T010, T011
   - Notes: Keep persistence isolated from API route code.
 
-- [ ] T013 Add database migration/bootstrap script for local tables.
+- [x] T013 Add database migration/bootstrap script for local tables.
   - Target files: `src/backend/scripts/init_db.py`, `src/backend/scripts/__init__.py`
   - Dependencies: T010, T011
   - Notes: Create tables for MVP and seed any required defaults.
@@ -109,6 +119,28 @@ These tasks make Docker Compose the default local runtime and ensure source moun
 - [ ] T014 Add persistence smoke tests for session and enquiry records.
   - Target files: `tests/integration/test_database_bootstrap.py`, `tests/integration/test_repositories.py`
   - Dependencies: T012, T013
+
+#### Phase 1 — Unit Tests (expanded coverage)
+
+- [ ] T014a Unit: CSV loader edge cases and schema alignment.
+  - Target files: `tests/unit/test_csv_loader_edges.py`
+  - Dependencies: T006, T009
+  - Notes: Cover invalid/malformed JSON in `Car Inventory Data`/`Pricing Details`, missing optional fields with sensible defaults, unknown columns ignored, inconsistent types coerced or flagged.
+
+- [ ] T014b Unit: Image resolver path handling.
+  - Target files: `tests/unit/test_image_resolver_paths.py`
+  - Dependencies: T007
+  - Notes: Validate absolute vs relative image paths, nonexistent files fallback to placeholder, `is_placeholder_image` correctness.
+
+- [ ] T014c Unit: Inventory catalog filtering and caching.
+  - Target files: `tests/unit/test_catalog_filters.py`
+  - Dependencies: T008
+  - Notes: Budget boundary conditions (exact cutoffs), fuel/transmission filters, deterministic ordering, uniqueness of IDs, cache warm/reload behaviour.
+
+- [ ] T014d Unit: Repository method interfaces with lightweight in-memory DB.
+  - Target files: `tests/unit/test_repositories_unit.py`
+  - Dependencies: T012
+  - Notes: Use SQLite in-memory engine to validate repository CRUD semantics for sessions and enquiries without requiring Docker Postgres; assert enum/status constraints and basic validation at repository boundary.
 
 ### User Story 3 - Local vector database setup
 
@@ -130,15 +162,15 @@ These tasks make Docker Compose the default local runtime and ensure source moun
 
 ### User Story 4 - FastAPI backend and app bootstrap
 
-- [ ] T018 [P] Create FastAPI application entrypoint and router registration.
+- [x] T018 [P] Create FastAPI application entrypoint and router registration.
   - Target files: `src/backend/main.py`, `src/backend/api/__init__.py`, `src/backend/api/routes/__init__.py`
   - Dependencies: T011, T012
 
-- [ ] T019 [P] Add API health and readiness endpoints.
+- [x] T019 [P] Add API health and readiness endpoints.
   - Target files: `src/backend/api/routes/health.py`
   - Dependencies: T018
 
-- [ ] T020 Add backend startup wiring for inventory load, vector index, and database initialization.
+- [x] T020 Add backend startup wiring for inventory load, vector index, and database initialization.
   - Target files: `src/backend/core/startup.py`, `src/backend/main.py`
   - Dependencies: T008, T013, T015, T018
 

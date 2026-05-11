@@ -41,3 +41,15 @@
 - Decision: Do not add production-style authentication or authorization in the technical plan beyond route separation and future-ready boundaries.
 - Rationale: The MVP is explicitly local-only and out of scope for production deployment. Adding full auth would increase complexity without improving core demo value.
 - Alternatives considered: Full role-based auth. Rejected because it violates MVP scope discipline.
+
+## Decision 8: Adopt Docker-first runtime with explicit host vs. container networking
+
+- Decision: Run all services via Docker Compose and standardize on container DNS (`postgres`, `backend`, `chroma`) for in-container URLs while exposing host access on mapped ports (Postgres `localhost:5433`, backend `:8000`, frontend `:8501`, Chroma `:8001`, Portainer `:9443`).
+- Rationale: A single, reproducible local runtime reduces setup friction and avoids host-specific configuration drift.
+- Alternatives considered: Mixed host + container services. Rejected due to higher failure rate and connectivity ambiguities.
+
+## Decision 9: Add automated connectivity validation and optional Compose healthchecks
+
+- Decision: Provide `scripts/validate_stack.py` to verify service reachability and perform a Postgres create/read/drop table test after `docker compose up`. Optionally add Compose `healthcheck` for Postgres, backend, and Chroma to improve readiness signaling.
+- Rationale: Early, automated detection of connectivity problems significantly reduces triage time and supports a reliable local demo.
+- Alternatives considered: Manual validation only. Rejected because it is error-prone and time-consuming.

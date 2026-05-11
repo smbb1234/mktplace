@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+from typing import Dict, Any
+
+# Minimal in-memory orchestrator for sessions (demo-only)
+_SESSIONS: Dict[str, Dict[str, Any]] = {}
+
+
+def create_or_get_session(session_id: str | None) -> Dict[str, Any]:
+    if session_id and session_id in _SESSIONS:
+        return _SESSIONS[session_id]
+    # create new
+    sid = session_id or "sess-" + str(len(_SESSIONS) + 1)
+    _SESSIONS[sid] = {"session_id": sid, "preferences": {}, "messages": []}
+    return _SESSIONS[sid]
+
+
+def add_message(session_id: str, message: str) -> None:
+    s = create_or_get_session(session_id)
+    s["messages"].append(message)
+
+
+def update_preferences(session_id: str, prefs: Dict[str, Any]) -> None:
+    s = create_or_get_session(session_id)
+    s["preferences"].update(prefs)
+
+
+def get_preferences(session_id: str) -> Dict[str, Any]:
+    s = create_or_get_session(session_id)
+    return s.get("preferences", {})

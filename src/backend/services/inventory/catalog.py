@@ -67,8 +67,12 @@ _default_catalog: Optional[InventoryCatalog] = None
 def get_default_catalog(csv_path: Optional[Path | str] = None) -> InventoryCatalog:
     global _default_catalog
     if _default_catalog is None:
-        _default_catalog = InventoryCatalog(csv_path=csv_path)
-        _default_catalog.load()
+        # Create a temporary catalog and attempt to load it. Only cache the
+        # catalog if loading succeeds to avoid returning a partially
+        # initialized catalog when load fails (e.g., missing CSV).
+        catalog = InventoryCatalog(csv_path=csv_path)
+        catalog.load()
+        _default_catalog = catalog
     return _default_catalog
 
 

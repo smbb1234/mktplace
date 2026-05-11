@@ -1,0 +1,2 @@
+Car Inventory Data,Pricing Details
+"{"car_id": "C1", "make": "X", "model": "One", "fuel_type": "Petrol", "transmission": "Manual"}","{"price_id":"P1","car_id":"C1","monthly_from_gbp":250}"

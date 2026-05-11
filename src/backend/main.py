@@ -9,6 +9,11 @@ from fastapi import APIRouter
 # register API routers
 from src.backend.api.catalog import router as catalog_router
 from src.backend.api.enquiries import router as enquiries_router
+from src.backend.api.chat import router as chat_router
+from src.backend.api.recommendations import router as recommendations_router
+from src.backend.api.finance import router as finance_router
+from src.backend.api.shortlist import router as shortlist_router
+from src.backend.api.comparisons import router as comparisons_router
 
 app = FastAPI(title="AI Car Buying Assistant Backend", version="0.1.0")
 
@@ -18,6 +23,11 @@ attach_startup(app)
 # include routers
 app.include_router(catalog_router)
 app.include_router(enquiries_router)
+app.include_router(chat_router)
+app.include_router(recommendations_router)
+app.include_router(finance_router)
+app.include_router(shortlist_router)
+app.include_router(comparisons_router)
 
 
 @app.get("/health")

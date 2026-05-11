@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Initializing database and creating tables..."
-python - <<PY
-from app.database import engine, Base
-import app.models as models
+echo "Initializing database inside backend container (SQLAlchemy create_all)..."
 
-Base.metadata.create_all(bind=engine)
-print('Tables created: ', list(Base.metadata.tables.keys()))
-PY
+# Prefer docker compose v2; fallback to v1 if needed
+if command -v docker &>/dev/null && docker compose version &>/dev/null; then
+	DOCKER_COMPOSE=(docker compose)
+elif command -v docker-compose &>/dev/null; then
+	DOCKER_COMPOSE=(docker-compose)
+else
+	echo "docker compose not found" >&2
+	exit 1
+fi
+
+"${DOCKER_COMPOSE[@]}" exec backend python -m src.backend.scripts.init_db
 
 echo "init_db completed"
