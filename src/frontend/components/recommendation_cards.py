@@ -145,46 +145,48 @@ def render_recommendation_cards(recs: List[dict]):
         _render_empty_state()
         return
 
-    st.markdown("<div class='car-grid'>", unsafe_allow_html=True)
-    for idx, rec in enumerate(recs):
-        safe_title = escape(_vehicle_title(rec))
-        safe_subtitle = escape(_vehicle_subtitle(rec))
-        safe_img_src = escape(_normalise_image_src(rec.get("image")), quote=True)
-        safe_fuel_type = escape(_spec_value(rec, "fuel_type"))
-        safe_transmission = escape(_spec_value(rec, "transmission"))
-        safe_seats = escape(_spec_value(rec, "seats"))
-        safe_monthly = escape(_monthly_amount(rec))
-        badge_html = "<div class='badge'>Best Match</div>" if idx == 0 else ""
+    for row_start in range(0, len(recs), 3):
+        row_recs = recs[row_start : row_start + 3]
+        cols = st.columns(len(row_recs))
+        for offset, rec in enumerate(row_recs):
+            idx = row_start + offset
+            safe_title = escape(_vehicle_title(rec))
+            safe_subtitle = escape(_vehicle_subtitle(rec))
+            safe_img_src = escape(_normalise_image_src(rec.get("image")), quote=True)
+            safe_fuel_type = escape(_spec_value(rec, "fuel_type"))
+            safe_transmission = escape(_spec_value(rec, "transmission"))
+            safe_seats = escape(_spec_value(rec, "seats"))
+            safe_monthly = escape(_monthly_amount(rec))
+            badge_html = "<div class='badge'>Best Match</div>" if idx == 0 else ""
 
-        st.markdown(
-            f"""
-            <div class='car-card' data-testid='recommendation-card'>
-              <div style='position:relative;'>
-                <div style='position:absolute;right:12px;top:12px;' class='heart' aria-label='Shortlist vehicle'>♡</div>
-                <div style='position:absolute;left:12px;top:12px;'>{badge_html}</div>
-                <img class='car-img' src='{safe_img_src}' alt='{safe_title}' />
-              </div>
-              <div style='font-size:18px;font-weight:700;color:#0F2A5F;margin-bottom:6px;'>{safe_title}</div>
-              <div style='font-size:13px;color:#526580;margin-bottom:12px;'>{safe_subtitle}</div>
-              <div style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;color:#526580;font-size:13px;'>
-                <div>⛽ {safe_fuel_type}</div>
-                <div>⚙️ {safe_transmission}</div>
-                <div>👥 {safe_seats} seats</div>
-              </div>
-              <div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748B;'>Estimated Monthly</div>
-              <div style='margin-top:4px;font-size:28px;font-weight:800;color:#0B7CFF;'>{safe_monthly}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        cols = st.columns(3)
-        for action_idx, label in enumerate(_ACTION_LABELS):
-            with cols[action_idx]:
-                st.button(
-                    label,
-                    key=f"recommendation_{idx}_{label.lower().replace(' ', '_')}",
-                    use_container_width=True,
+            with cols[offset]:
+                st.markdown(
+                    f"""
+                    <div class='car-card' data-testid='recommendation-card'>
+                      <div style='position:relative;'>
+                        <div style='position:absolute;right:12px;top:12px;' class='heart' aria-label='Shortlist vehicle'>♡</div>
+                        <div style='position:absolute;left:12px;top:12px;'>{badge_html}</div>
+                        <img class='car-img' src='{safe_img_src}' alt='{safe_title}' />
+                      </div>
+                      <div style='font-size:18px;font-weight:700;color:#0F2A5F;margin-bottom:6px;'>{safe_title}</div>
+                      <div style='font-size:13px;color:#526580;margin-bottom:12px;'>{safe_subtitle}</div>
+                      <div style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;color:#526580;font-size:13px;'>
+                        <div>⛽ {safe_fuel_type}</div>
+                        <div>⚙️ {safe_transmission}</div>
+                        <div>👥 {safe_seats} seats</div>
+                      </div>
+                      <div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748B;'>Estimated Monthly</div>
+                      <div style='margin-top:4px;font-size:28px;font-weight:800;color:#0B7CFF;'>{safe_monthly}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
 
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+                action_cols = st.columns(3)
+                for action_idx, label in enumerate(_ACTION_LABELS):
+                    with action_cols[action_idx]:
+                        st.button(
+                            label,
+                            key=f"recommendation_{idx}_{label.lower().replace(' ', '_')}",
+                            use_container_width=True,
+                        )
