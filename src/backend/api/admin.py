@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, Depends, Header, HTTPException
 from typing import List
 
 from src.backend.core.database import get_db
 from src.backend.models.leads import Enquiry
-from pathlib import Path
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -25,8 +24,6 @@ def flush_offline(x_admin_token: str | None = Header(None)):
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 @router.get("/enquiries", response_model=List[dict])
