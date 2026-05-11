@@ -4,7 +4,6 @@ from fastapi import FastAPI
 
 from src.shared.config.settings import get_settings
 from src.backend.startup import attach_startup
-from fastapi import APIRouter
 
 # register API routers
 from src.backend.api.catalog import router as catalog_router

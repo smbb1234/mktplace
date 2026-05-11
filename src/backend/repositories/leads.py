@@ -25,7 +25,7 @@ class LeadsRepository:
             self.db.add(enquiry)
             self.db.flush()
             return enquiry
-        except Exception as exc:
+        except Exception:
             logging.exception("Failed to create enquiry with payload: %s", enquiry_data)
             raise
 

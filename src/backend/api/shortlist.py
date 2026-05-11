@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from src.backend.services.leads.shortlist_service import add_to_shortlist, remove_from_shortlist, list_shortlist
 

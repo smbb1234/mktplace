@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import streamlit as st
-from src.frontend.state.session_state import set_preferences, get_session_id
+from src.frontend.state.session_state import set_preferences
 
 
 def preference_controls():
     st.sidebar.header("Preferences")
-    session_id = get_session_id()
     budget = st.sidebar.number_input("Monthly budget", min_value=0.0, value=500.0)
     fuel = st.sidebar.selectbox("Fuel type", options=["Any", "Petrol", "Diesel", "Electric"]) 
     transmission = st.sidebar.selectbox("Transmission", options=["Any", "Manual", "Automatic"]) 
