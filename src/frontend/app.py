@@ -7,6 +7,7 @@ from src.frontend.components.recommendation_cards import render_recommendation_c
 from src.frontend.components.sidebar_nav import sidebar_nav
 from src.frontend.components.car_detail import car_detail
 from src.frontend.components.enquiry_form import enquiry_form
+from src.frontend.components.finance_summary import finance_summary
 from src.frontend.components.header import render_header
 from src.frontend.components.summary_cards import summary_cards
 from src.frontend.state.session_state import get_preferences, get_session_id
@@ -327,22 +328,60 @@ input, textarea {
   box-shadow: var(--soft-shadow);
 }
 
-.finance-summary .label, .safety-note {
+.finance-summary__icon {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #0b7cff, #6bbdff);
+  color: #fff;
+  font-size: 1.35rem;
+  box-shadow: 0 12px 24px rgba(11, 124, 255, 0.2);
+}
+
+.finance-summary__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.finance-summary__label {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.finance-summary__copy p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0.2rem 0 0.75rem;
+}
+
+.finance-summary__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 0.65rem;
+}
+
+.finance-summary__metric span, .safety-note {
   color: var(--muted);
   font-size: 0.82rem;
 }
 
-.finance-summary .value {
+.finance-summary__metric strong {
   color: var(--ink);
-  font-weight: 800;
+  display: block;
+  font-size: 1rem;
   margin-top: 0.15rem;
 }
 
-.cta-link {
+.finance-summary__button {
   background: linear-gradient(145deg, #0b7cff, #5fb7ff);
   color: #fff !important;
-  text-decoration: none;
-  padding: 0.7rem 1rem;
+  border: 0;
+  padding: 0.75rem 1rem;
   border-radius: 999px;
   font-weight: 800;
   box-shadow: 0 12px 24px rgba(11, 124, 255, 0.22);
@@ -436,19 +475,7 @@ def _render_recommendations_panel(session_id: str) -> None:
             "Start the API to load personalised vehicles."
         )
     render_recommendation_cards(recs[:9])
-    st.markdown(
-        f"""
-        <div class="finance-summary">
-          <div>
-            <div class="label">Finance Summary</div>
-            <div class="value">Budget £{int(budget) if budget else 0} •
-            Term {int(term)} months • Deposit £{int(deposit)}</div>
-          </div>
-          <a class="cta-link" href="#">View Finance Options</a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    finance_summary(budget, term, deposit)
     st.markdown("</section>", unsafe_allow_html=True)
 
 
