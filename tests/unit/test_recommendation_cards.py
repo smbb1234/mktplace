@@ -2,85 +2,99 @@ from __future__ import annotations
 
 import importlib
 import sys
-import types
-from pathlib import Path
-
-from src.shared.config.constants import DEFAULT_PLACEHOLDER_IMAGE_PATH, PROJECT_ROOT
 
 
-class _FakeContext:
+class _Context:
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc, tb):
         return False
 
-    def button(self, *args, **kwargs):
-        return False
-
 
 class _FakeStreamlit:
     def __init__(self):
-        self.images = []
-        self.infos = []
-        self.markdowns = []
+        self.markdown_calls: list[str] = []
+        self.info_calls: list[str] = []
+        self.button_calls: list[tuple[str, dict]] = []
 
-    def markdown(self, *args, **kwargs):
-        self.markdowns.append((args, kwargs))
+    def markdown(self, body: str, **_kwargs):
+        self.markdown_calls.append(body)
 
-    def info(self, message):
-        self.infos.append(message)
+    def info(self, body: str):
+        self.info_calls.append(body)
 
-    def columns(self, count):
-        return [_FakeContext() for _ in range(count)]
+    def columns(self, spec):
+        count = spec if isinstance(spec, int) else len(spec)
+        return [_Context() for _ in range(count)]
 
-    def container(self, *args, **kwargs):
-        return _FakeContext()
-
-    def image(self, image, *args, **kwargs):
-        self.images.append((image, args, kwargs))
+    def button(self, label: str, **kwargs):
+        self.button_calls.append((label, kwargs))
+        return False
 
 
-def _import_recommendation_cards(monkeypatch):
-    monkeypatch.setitem(sys.modules, "streamlit", types.SimpleNamespace())
+def _load_module(fake_st: _FakeStreamlit, monkeypatch):
+    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
+    sys.modules.pop("src.frontend.components.recommendation_cards", None)
     return importlib.import_module("src.frontend.components.recommendation_cards")
 
 
-def test_render_recommendation_cards_with_image_does_not_raise(monkeypatch):
-    recommendation_cards = _import_recommendation_cards(monkeypatch)
+def test_recommendation_cards_render_vehicle_monthly_and_actions(monkeypatch):
     fake_st = _FakeStreamlit()
-    monkeypatch.setattr(recommendation_cards, "st", fake_st)
+    module = _load_module(fake_st, monkeypatch)
 
-    recommendation_cards.render_recommendation_cards(
+    module.render_recommendation_cards(
         [
             {
-                "make": "Demo",
-                "model": "Car",
-                "image": "assets/vehicles/CAR-2026-0001.png",
-                "pricing": {"list_price_gbp": 25000, "monthly_from_gbp": 350},
+                "vehicle_id": "car-1",
+                "make": "Tesla",
+                "model": "Model 3",
+                "variant": "Long Range",
+                "fuel_type": "Electric",
+                "transmission": "Automatic",
+                "seats": 5,
+                "pricing": {"monthly_from_gbp": 449},
+                "image": "assets/cars/model-3.png",
             }
         ]
     )
 
-    assert fake_st.images
-    image_source = fake_st.images[0][0]
-    assert Path(image_source).exists()
-    assert image_source == PROJECT_ROOT / "assets" / "vehicles" / "CAR-2026-0001.png"
+    rendered = "\n".join(fake_st.markdown_calls)
+    assert "Tesla Model 3" in rendered
+    assert "£449/mo" in rendered
+    assert "View Details" in [label for label, _kwargs in fake_st.button_calls]
+    assert "Shortlist" in [label for label, _kwargs in fake_st.button_calls]
+    assert "Enquire" in [label for label, _kwargs in fake_st.button_calls]
 
 
-def test_render_recommendation_cards_uses_placeholder_when_image_missing(monkeypatch):
-    recommendation_cards = _import_recommendation_cards(monkeypatch)
+def test_recommendation_cards_empty_state(monkeypatch):
     fake_st = _FakeStreamlit()
-    monkeypatch.setattr(recommendation_cards, "st", fake_st)
+    module = _load_module(fake_st, monkeypatch)
 
-    recommendation_cards.render_recommendation_cards([{"make": "Demo", "model": "Car"}])
+    module.render_recommendation_cards([])
 
-    assert fake_st.images
-    assert fake_st.images[0][0] == DEFAULT_PLACEHOLDER_IMAGE_PATH
+    rendered = "\n".join(fake_st.markdown_calls + fake_st.info_calls)
+    assert "No recommendations yet" in rendered
+    assert "chat with the assistant" in rendered.lower()
+    assert fake_st.button_calls == []
 
 
-def test_resolve_streamlit_image_source_placeholder_comes_from_constants(monkeypatch):
-    recommendation_cards = _import_recommendation_cards(monkeypatch)
+def test_first_recommendation_card_includes_best_match_badge(monkeypatch):
+    fake_st = _FakeStreamlit()
+    module = _load_module(fake_st, monkeypatch)
 
-    assert recommendation_cards.resolve_streamlit_image_source(None) == DEFAULT_PLACEHOLDER_IMAGE_PATH
-    assert recommendation_cards.resolve_streamlit_image_source("missing.png") == DEFAULT_PLACEHOLDER_IMAGE_PATH
+    module.render_recommendation_cards(
+        [
+            {"make": "Ford", "model": "Puma", "pricing": {"monthly_from_gbp": 310}},
+            {"make": "Kia", "model": "Niro", "pricing": {"monthly_from_gbp": 330}},
+        ]
+    )
+
+    first_card_markup = next(
+        call for call in fake_st.markdown_calls if "Ford Puma" in call
+    )
+    second_card_markup = next(
+        call for call in fake_st.markdown_calls if "Kia Niro" in call
+    )
+    assert "Best Match" in first_card_markup
+    assert "Best Match" not in second_card_markup

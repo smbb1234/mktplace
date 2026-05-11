@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class ChatMessage(BaseModel):
@@ -15,3 +16,9 @@ class PreferenceExtractionResponse(BaseModel):
     fuel_type: Optional[str] = None
     transmission: Optional[str] = None
     family_size: Optional[int] = None
+
+
+class ChatResponse(PreferenceExtractionResponse):
+    session_id: str
+    reply: str
+    quick_replies: Optional[list[str]] = None
