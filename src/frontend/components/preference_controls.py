@@ -19,3 +19,5 @@ def preference_controls():
             prefs["transmission"] = transmission
         set_preferences(prefs)
         st.sidebar.success("Preferences applied")
+        # trigger a rerun so main fetches new recommendations
+        st.experimental_rerun()

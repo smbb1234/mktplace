@@ -14,8 +14,8 @@ def shortlist_panel():
         return
     if st.sidebar.button("View shortlist"):
         try:
-            r = client.get(f"{client.base}/shortlist/list", params={"session_id": session_id})
+            r = client.shortlist_list(session_id)
+            st.sidebar.write(r)
         except Exception:
             st.sidebar.error("Failed to load shortlist")
             return
-        st.sidebar.write(r.json())

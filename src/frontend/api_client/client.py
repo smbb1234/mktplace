@@ -24,5 +24,14 @@ class BackendClient:
         params = {"session_id": session_id} if session_id else {}
         return requests.get(f"{self.base}/recommendations/from_session", params=params).json()
 
+    def shortlist_add(self, session_id: str, vehicle_id: str) -> Any:
+        return requests.post(f"{self.base}/shortlist/add", params={"session_id": session_id, "vehicle_id": vehicle_id})
+
+    def shortlist_remove(self, session_id: str, vehicle_id: str) -> Any:
+        return requests.post(f"{self.base}/shortlist/remove", params={"session_id": session_id, "vehicle_id": vehicle_id})
+
+    def shortlist_list(self, session_id: str) -> Any:
+        return requests.get(f"{self.base}/shortlist/list", params={"session_id": session_id}).json()
+
     def get_finance(self, vehicle_id: str, deposit: float = 0.0, term_months: int = 36) -> Any:
         return requests.get(f"{self.base}/finance/estimate", params={"vehicle_id": vehicle_id, "deposit": deposit, "term_months": term_months}).json()

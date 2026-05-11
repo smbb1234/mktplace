@@ -1,3 +1,48 @@
+# Quickstart — AI Car Buying Assistant MVP
+
+1. Start Docker Compose (build and run):
+
+```bash
+docker compose up -d --build
+```
+
+2. Wait for services, then validate stack:
+
+```bash
+python scripts/validate_stack.py
+```
+
+3. Normalize demo data (optional):
+
+```bash
+python -m src.backend.scripts.normalize_demo_data
+```
+
+4. Seed demo enquiries into the DB:
+
+```bash
+DATABASE_URL=postgresql+psycopg://car_user:car_password@localhost:5433/car_mvp \
+  /home/srujan/Documents/repo/mktplace/.venv/bin/python -m src.backend.scripts.seed_demo_data
+```
+
+5. Run unit and integration tests:
+
+```bash
+/home/srujan/Documents/repo/mktplace/.venv/bin/python -m pytest tests/unit -q
+/home/srujan/Documents/repo/mktplace/.venv/bin/python -m pytest tests/integration -q
+```
+
+6. Run E2E smoke tests (optional):
+
+```bash
+/home/srujan/Documents/repo/mktplace/.venv/bin/python -m pytest tests/e2e -q
+```
+
+7. Flush any offline enquiries (if DB was down earlier):
+
+```bash
+curl -X POST -H "X-Admin-Token: <token>" http://localhost:8000/admin/flush_offline
+```
 # Quickstart: Docker-First Local Run + Connectivity Validation
 
 ## Goal

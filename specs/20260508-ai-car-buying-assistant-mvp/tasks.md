@@ -116,55 +116,45 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Dependencies: T010, T011
   - Notes: Create tables for MVP and seed any required defaults.
 
-- [ ] T014 Add persistence smoke tests for session and enquiry records.
+- [x] T014 Add persistence smoke tests for session and enquiry records.
   - Target files: `tests/integration/test_database_bootstrap.py`, `tests/integration/test_repositories.py`
   - Dependencies: T012, T013
- - [x] T014 Add persistence smoke tests for session and enquiry records.
-   - Target files: `tests/integration/test_database_bootstrap.py`, `tests/integration/test_repositories.py`
-   - Dependencies: T012, T013
 
 #### Phase 1 — Unit Tests (expanded coverage)
 
-- [ ] T014a Unit: CSV loader edge cases and schema alignment.
- - [x] T014a Unit: CSV loader edge cases and schema alignment.
+- [x] T014a Unit: CSV loader edge cases and schema alignment.
   - Target files: `tests/unit/test_csv_loader_edges.py`
   - Dependencies: T006, T009
   - Notes: Cover invalid/malformed JSON in `Car Inventory Data`/`Pricing Details`, missing optional fields with sensible defaults, unknown columns ignored, inconsistent types coerced or flagged.
 
-- [ ] T014b Unit: Image resolver path handling.
- - [x] T014b Unit: Image resolver path handling.
+- [x] T014b Unit: Image resolver path handling.
   - Target files: `tests/unit/test_image_resolver_paths.py`
   - Dependencies: T007
   - Notes: Validate absolute vs relative image paths, nonexistent files fallback to placeholder, `is_placeholder_image` correctness.
 
-- [ ] T014c Unit: Inventory catalog filtering and caching.
- - [x] T014c Unit: Inventory catalog filtering and caching.
+- [x] T014c Unit: Inventory catalog filtering and caching.
   - Target files: `tests/unit/test_catalog_filters.py`
   - Dependencies: T008
   - Notes: Budget boundary conditions (exact cutoffs), fuel/transmission filters, deterministic ordering, uniqueness of IDs, cache warm/reload behaviour.
 
-- [ ] T014d Unit: Repository method interfaces with lightweight in-memory DB.
- - [x] T014d Unit: Repository method interfaces with lightweight in-memory DB.
+- [x] T014d Unit: Repository method interfaces with lightweight in-memory DB.
   - Target files: `tests/unit/test_repositories_unit.py`
   - Dependencies: T012
   - Notes: Use SQLite in-memory engine to validate repository CRUD semantics for sessions and enquiries without requiring Docker Postgres; assert enum/status constraints and basic validation at repository boundary.
 
 ### User Story 3 - Local vector database setup
 
-- [ ] T015 [P] Add ChromaDB configuration and local persistence path handling.
- - [x] T015 [P] Add ChromaDB configuration and local persistence path handling.
+- [x] T015 [P] Add ChromaDB configuration and local persistence path handling.
   - Target files: `src/backend/services/vectorstore/chroma_config.py`, `src/backend/services/vectorstore/__init__.py`
   - Dependencies: T002
   - Notes: Keep Chroma optional and disabled by default if the plan allows.
 
-- [ ] T016 Implement vehicle embedding and semantic lookup helpers.
- - [x] T016 Implement vehicle embedding and semantic lookup helpers.
+- [x] T016 Implement vehicle embedding and semantic lookup helpers.
   - Target files: `src/backend/services/vectorstore/vehicle_index.py`
   - Dependencies: T015, T008
   - Notes: Index vehicle descriptions only; semantic retrieval must remain secondary to deterministic filtering.
 
 - [ ] T017 Add vector store validation smoke test.
- - [x] T017 Add vector store validation smoke test.
   - Target files: `tests/integration/test_vectorstore.py`
   - Dependencies: T015, T016
 
@@ -184,149 +174,123 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Target files: `src/backend/core/startup.py`, `src/backend/main.py`
   - Dependencies: T008, T013, T015, T018
 
-- [ ] T021 Add backend smoke test for startup and health endpoints.
- - [x] T021 Add backend smoke test for startup and health endpoints.
+- [x] T021 Add backend smoke test for startup and health endpoints.
   - Target files: `tests/integration/test_backend_health.py`
   - Dependencies: T019, T020
 
 ### User Story 5 - AI assistant conversation flow and preference extraction
 
-- [ ] T022 [P] Define chat/session API schemas.
- - [x] T022 [P] Define chat/session API schemas.
+- [x] T022 [P] Define chat/session API schemas.
   - Target files: `src/backend/schemas/chat.py`, `src/backend/schemas/session.py`
   - Dependencies: T010, T018
 
-- [ ] T023 [P] Implement preference extraction from chat messages.
- - [x] T023 [P] Implement preference extraction from chat messages.
+- [x] T023 [P] Implement preference extraction from chat messages.
   - Target files: `src/backend/services/ai/preference_extractor.py`, `src/backend/services/ai/__init__.py`
   - Dependencies: T004, T022
   - Notes: Extract intent, budget, deposit, fuel, transmission, family size, running cost, and timeframe.
 
-- [ ] T024 Implement conversation state orchestration service.
- - [x] T024 Implement conversation state orchestration service.
+- [x] T024 Implement conversation state orchestration service.
   - Target files: `src/backend/services/ai/conversation_orchestrator.py`
   - Dependencies: T008, T012, T022, T023
   - Notes: Keep the assistant active while recommendations, comparison, finance, and enquiry are displayed.
 
-- [ ] T025 Add chat message persistence and session update flow.
- - [x] T025 Add chat message persistence and session update flow.
+- [x] T025 Add chat message persistence and session update flow.
   - Target files: `src/backend/api/routes/chat.py`, `src/backend/services/ai/chat_service.py`
   - Dependencies: T018, T024, T012
 
 - [ ] T026 Add conversation flow tests for greeting, extraction, and turn updates.
- - [ ] T026 Add conversation flow tests for greeting, extraction, and turn updates.
   - Target files: `tests/integration/test_chat_flow.py`, `tests/unit/test_preference_extractor.py`
   - Dependencies: T023, T024, T025
 
 ### User Story 6 - Intent-based recommendation logic and match scoring
 
-- [ ] T027 [P] Implement match score calculation service.
- - [x] T027 [P] Implement match score calculation service.
+- [x] T027 [P] Implement match score calculation service.
   - Target files: `src/backend/services/recommendations/match_score.py`
   - Dependencies: T004, T008
   - Notes: Use provided total match score when available, otherwise compute weighted score from budget, intent, and lifestyle/family.
 
-- [ ] T028 Implement deterministic recommendation filtering and ranking.
- - [x] T028 Implement deterministic recommendation filtering and ranking.
+- [x] T028 Implement deterministic recommendation filtering and ranking.
   - Target files: `src/backend/services/recommendations/ranker.py`, `src/backend/services/recommendations/filtering.py`
   - Dependencies: T008, T016, T027, T024
   - Notes: Enforce budget, transmission, fuel, and availability constraints before optional vector similarity.
 
-- [ ] T029 Implement recommendation explanation generation input builder.
- - [x] T029 Implement recommendation explanation generation input builder.
+- [x] T029 Implement recommendation explanation generation input builder.
   - Target files: `src/backend/services/recommendations/explanations.py`
   - Dependencies: T028
   - Notes: Produce structured explanation context for the LLM without inventing vehicle facts.
 
-- [ ] T030 Add recommendation API endpoints for query and refinement.
- - [x] T030 Add recommendation API endpoints for query and refinement.
+- [x] T030 Add recommendation API endpoints for query and refinement.
   - Target files: `src/backend/api/routes/recommendations.py`, `src/backend/schemas/recommendations.py`
   - Dependencies: T018, T022, T027, T028, T029
 
-- [ ] T031 Add recommendation logic tests for scoring, filtering, and no-results guidance.
- - [ ] T031 Add recommendation logic tests for scoring, filtering, and no-results guidance.
+- [x] T031 Add recommendation logic tests for scoring, filtering, and no-results guidance.
   - Target files: `tests/unit/test_match_score.py`, `tests/unit/test_recommendation_ranker.py`, `tests/integration/test_recommendation_api.py`
   - Dependencies: T027, T028, T030
 
 ### User Story 7 - Finance estimate and disclaimer
 
-- [ ] T032 [P] Implement finance estimate calculation service.
- - [x] T032 [P] Implement finance estimate calculation service.
+- [x] T032 [P] Implement finance estimate calculation service.
   - Target files: `src/backend/services/finance/estimator.py`, `src/backend/services/finance/__init__.py`
   - Dependencies: T004, T008
   - Notes: Use per-car pricing defaults and clamp demo inputs safely.
 
-- [ ] T033 Add finance estimate API endpoint and response schema.
- - [x] T033 Add finance estimate API endpoint and response schema.
+- [x] T033 Add finance estimate API endpoint and response schema.
   - Target files: `src/backend/api/routes/finance.py`, `src/backend/schemas/finance.py`
   - Dependencies: T018, T032
 
 - [ ] T034 Add finance disclaimer constants and response enforcement.
- - [ ] T034 Add finance disclaimer constants and response enforcement.
   - Target files: `src/shared/config/constants.py`, `src/backend/services/finance/estimator.py`, `src/frontend/components/finance_disclaimer.py`
   - Dependencies: T004, T032, T033
 
-- [ ] T035 Add finance calculation tests and disclaimer validation.
- - [ ] T035 Add finance calculation tests and disclaimer validation.
+- [x] T035 Add finance calculation tests and disclaimer validation.
   - Target files: `tests/unit/test_finance_estimator.py`, `tests/integration/test_finance_api.py`
   - Dependencies: T032, T033, T034
 
 ### User Story 8 - Comparison, shortlist, and enquiry APIs
 
-- [ ] T036 Implement shortlist persistence service.
- - [x] T036 Implement shortlist persistence service.
+- [x] T036 Implement shortlist persistence service.
   - Target files: `src/backend/services/leads/shortlist_service.py`
   - Dependencies: T012, T024
 
-- [ ] T037 Add shortlist API endpoints.
- - [x] T037 Add shortlist API endpoints.
+- [x] T037 Add shortlist API endpoints.
   - Target files: `src/backend/api/routes/shortlist.py`
   - Dependencies: T018, T036
 
-- [ ] T038 Implement comparison assembly service for 2–3 vehicles.
- - [x] T038 Implement comparison assembly service for 2–3 vehicles.
+- [x] T038 Implement comparison assembly service for 2–3 vehicles.
   - Target files: `src/backend/services/recommendations/comparison_service.py`
   - Dependencies: T008, T028, T032
 
-- [ ] T039 Add comparison API endpoint and schema.
- - [x] T039 Add comparison API endpoint and schema.
+- [x] T039 Add comparison API endpoint and schema.
   - Target files: `src/backend/api/routes/comparisons.py`, `src/backend/schemas/comparisons.py`
   - Dependencies: T018, T038
 
-- [ ] T040 Implement enquiry capture service and AI summary generation.
- - [x] T040 Implement enquiry capture service and AI summary generation.
+- [x] T040 Implement enquiry capture service and AI summary generation.
   - Target files: `src/backend/services/leads/enquiry_service.py`, `src/backend/services/ai/customer_summary.py`
   - Dependencies: T012, T024, T032
 
-- [ ] T041 Add enquiry API endpoint and schema.
- - [x] T041 Add enquiry API endpoint and schema.
+- [x] T041 Add enquiry API endpoint and schema.
   - Target files: `src/backend/api/routes/enquiries.py`, `src/backend/schemas/enquiries.py`
   - Dependencies: T018, T040
 
-- [ ] T042 Add comparison, shortlist, and enquiry tests.
- - [ ] T042 Add comparison, shortlist, and enquiry tests.
+- [x] T042 Add comparison, shortlist, and enquiry tests.
   - Target files: `tests/integration/test_comparison_api.py`, `tests/integration/test_shortlist_api.py`, `tests/integration/test_enquiry_api.py`
   - Dependencies: T037, T039, T041
 
 ### User Story 9 - Admin dashboard and lead management
 
-- [ ] T043 Implement admin lead listing and detail services.
- - [x] T043 Implement admin lead listing and detail services.
+- [x] T043 Implement admin lead listing and detail services.
   - Target files: `src/backend/services/leads/admin_dashboard.py`
   - Dependencies: T012, T040
 
-- [ ] T044 Add admin API endpoints for lead list, detail, status update, and notes.
- - [x] T044 Add admin API endpoints for lead list, detail, status update, and notes.
+- [x] T044 Add admin API endpoints for lead list, detail, status update, and notes.
   - Target files: `src/backend/api/routes/admin.py`
   - Dependencies: T018, T043
 
 - [ ] T045 Add admin status history and notes persistence behavior.
- - [ ] T045 Add admin status history and notes persistence behavior.
   - Target files: `src/backend/services/leads/status_service.py`, `src/backend/services/leads/notes_service.py`
   - Dependencies: T012, T043, T044
 
-- [ ] T046 Add admin dashboard API tests for status updates and notes.
- - [ ] T046 Add admin dashboard API tests for status updates and notes.
+- [x] T046 Add admin dashboard API tests for status updates and notes.
   - Target files: `tests/integration/test_admin_api.py`
   - Dependencies: T044, T045
 
@@ -354,7 +318,7 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Target files: `src/frontend/components/finance_panel.py`, `src/frontend/components/finance_disclaimer.py`
   - Dependencies: T034, T048
 
-- [ ] T052 Add customer UI validation and empty-state handling.
+- [x] T052 Add customer UI validation and empty-state handling.
   - Target files: `src/frontend/components/validation.py`, `src/frontend/components/empty_states.py`
   - Dependencies: T049, T050, T051
 
@@ -402,7 +366,7 @@ These tasks make Docker Compose the default local runtime and ensure source moun
 
 ### User Story 13 - Local demo data and content
 
-- [ ] T062 Review and normalize local demo inventory rows for MVP usage.
+- [x] T062 Review and normalize local demo inventory rows for MVP usage.
   - Target files: `data/dataset.csv`, `data/datasetSample.csv`
   - Dependencies: T006, T008
   - Notes: Keep demo records aligned to the required recommendation, comparison, and enquiry scenarios.
@@ -436,7 +400,7 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Dependencies: T053, T056, T061, T064, T067
   - Notes: Cover greeting, discovery, recommendation, refinement, comparison, finance, shortlist, enquiry, summary, and admin status update.
 
-- [ ] T069 Document the final local demo runbook and smoke-test checklist.
+- [x] T069 Document the final local demo runbook and smoke-test checklist.
   - Target files: `specs/20260508-ai-car-buying-assistant-mvp/quickstart.md`, `README.md`
   - Dependencies: T068
 
