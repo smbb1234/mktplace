@@ -1,64 +1,135 @@
 # mktplace
-Lloyds Market Place
 
-FrontEnd: http://localhost:8501
-Backend: http://localhost:8000
-Backend API docs: http://localhost:8000/docs
-ChromaDB host port: http://localhost:8001
-Portainer: https://localhost:9443
+Lloyds Market Place — an AI-assisted car buying MVP with a FastAPI backend and Streamlit frontend.
 
-Quickstart (Docker-first):
+## Current application entrypoints
 
-1) Create Docker env file
+- Main backend entrypoint: `src.backend.main:app` (FastAPI app for Uvicorn).
+- Main frontend entrypoint: `src/frontend/app.py` (Streamlit app).
+
+## Service URLs
+
+When running the full Docker stack:
+
+- Frontend UI: http://localhost:8501
+- Backend API: http://localhost:8000
+- Backend API docs: http://localhost:8000/docs
+- ChromaDB host port: http://localhost:8001
+- Portainer: https://localhost:9443
+- Postgres host port: `localhost:5433` mapped to container port `5432`
+
+## Docker-first quickstart
+
+Docker Compose is the recommended local runtime because it starts the frontend, backend, Postgres, ChromaDB, and Portainer with the same service names the containers expect.
+
+1. Create `.env.docker`:
+
+   ```bash
+   cat > .env.docker <<'ENV'
+   OPENAI_API_KEY=
+   DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/mktplace
+   POSTGRES_DB=mktplace
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   FASTAPI_HOST=0.0.0.0
+   FASTAPI_PORT=8000
+   STREAMLIT_HOST=0.0.0.0
+   STREAMLIT_PORT=8501
+   INVENTORY_CSV_PATH=data/dataset.csv
+   PLACEHOLDER_IMAGE_PATH=assets/placeholder.svg
+   CHROMA_ENABLED=false
+   CHROMA_DB_PATH=/app/vector_db
+   ADMIN_TOKEN=
+   ENV
+   ```
+
+   `OPENAI_API_KEY` is optional for the current deterministic demo flow, but can be filled in for future AI-backed behaviour.
+
+2. Build and start the stack:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. Check containers and logs:
+
+   ```bash
+   docker compose ps
+   docker compose logs -f backend
+   docker compose logs -f frontend
+   docker compose logs -f postgres
+   ```
+
+4. Open the frontend at http://localhost:8501 and the backend docs at http://localhost:8000/docs.
+
+5. Stop the stack when finished:
+
+   ```bash
+   docker compose down
+   # Optional destructive cleanup of DB/vector/Portainer volumes:
+   docker compose down -v
+   ```
+
+## Local quick test commands
+
+For a fast non-Docker feedback loop, install dependencies and run the test suite from the repository root:
 
 ```bash
-cp .env.docker.example .env.docker
-# then edit .env.docker to add your OPENAI_API_KEY (optional for now)
+python -m pip install -r requirements.txt
+python -m pytest tests/unit
+python -m pytest tests/integration
+python -m pytest tests/e2e
 ```
 
-2) Launch the full stack
+Useful direct run commands, if you already have dependencies and required services available locally:
+
+```bash
+uvicorn src.backend.main:app --reload --host 127.0.0.1 --port 8000
+streamlit run src/frontend/app.py --server.address=127.0.0.1 --server.port=8501
+```
+
+## Full Docker validation commands
+
+Run this sequence to validate the application in its recommended Docker environment:
 
 ```bash
 docker compose up -d --build
+docker compose ps
+docker compose exec backend python -m pytest tests/unit tests/integration tests/e2e
+curl -f http://localhost:8000/health
+curl -f http://localhost:8000/catalog/
+curl -f -X POST http://localhost:8000/chat/message \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"I am looking to buy with a budget of £450 per month"}'
 ```
 
-3) Open the apps
-
-- Streamlit UI: http://localhost:8501
-- FastAPI backend: http://localhost:8000 (docs at /docs)
-- ChromaDB server (optional for now): http://localhost:8001
-- Portainer (Docker management): https://localhost:9443
-
-4) Live editing in VS Code
-
-- Source code, data, and assets are mounted into the containers via volumes.
-- Edit code locally in VS Code; backend (uvicorn --reload) and frontend (Streamlit) auto-reload.
-- Inventory CSV is read from `data/dataset.csv` by default; car images from `assets/` (placeholder included).
-
-5) Logs and control
+If you need to validate the frontend process is reachable from the host, also run:
 
 ```bash
-docker compose ps
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f postgres
-docker compose restart backend
-docker compose down
-docker compose down -v   # deletes database/vector/Portainer volumes; use with care
+curl -f http://localhost:8501
 ```
 
-Local (non-Docker) development:
+## Frontend UI overview
 
-- `.env.example` shows a local configuration. Copy to `.env` and adjust as needed if you choose to run services outside Docker.
-- Docker Compose remains the default and recommended local runtime.
+The frontend is a three-column Streamlit experience:
 
-Docker Commands:
-docker compose ps
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f postgres
-docker compose restart backend
-docker compose down
-docker compose down -v (only use to delete database/vector/Portainer volumes.)
+- Left navigation rail: static visual navigation for Chat, Recommendations, Finance, Shortlist, and Settings.
+- Middle chat region: header, New Session control, assistant messages, quick replies, free-text input, and send button.
+- Right recommendations region: finance summary cards, recommendation cards, and a compact finance summary.
+- Detail/enquiry region: rendered below the main columns when a vehicle is selected.
 
-https://prod.liveshare.vsengsaas.visualstudio.com/join?5E2712283F408F9A627D29F2E26A64100A98
+Current UI behaviour to be aware of:
+
+- The sidebar navigation is display-only; it does not switch pages yet.
+- Recommendation card action buttons are rendered for View Details, Shortlist, and Enquire, but the cards currently present the visual shell rather than a full click-through workflow.
+- The Finance Summary `View Finance Options` control is display-only.
+- The chat area is the main interactive flow: messages are sent to `POST /chat/message`, returned preferences are stored in session state, and recommendations refresh from `GET /recommendations/from_session`.
+
+See `docs/frontend-ui.md` for a fuller UI map and `docs/testing.md` for test strategy and Docker/offline-queue notes.
+
+## Operational notes
+
+- Source code, data, and assets are mounted into the containers via volumes, so local edits are reflected in running containers.
+- Backend uses `uvicorn --reload`; frontend Streamlit reloads on source changes.
+- Inventory CSV defaults to `data/dataset.csv`; car images are served from `assets/` where available.
+- If Postgres is unavailable during enquiry submission, the API queues the enquiry in `data/offline_enquiries.jsonl` and returns HTTP `202`. Flush queued enquiries after Postgres is restored with `docker compose exec backend python -m src.backend.scripts.flush_offline_enquiries` or `POST /admin/flush_offline`.
