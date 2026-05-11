@@ -98,3 +98,21 @@ def test_first_recommendation_card_includes_best_match_badge(monkeypatch):
     )
     assert "Best Match" in first_card_markup
     assert "Best Match" not in second_card_markup
+
+
+def test_recommendation_card_local_images_render_as_data_uris(monkeypatch):
+    fake_st = _FakeStreamlit()
+    module = _load_module(fake_st, monkeypatch)
+
+    assert module._normalise_image_src("assets/placeholder.png").startswith(
+        "data:image/png;base64,"
+    )
+
+
+def test_recommendation_card_remote_images_are_preserved(monkeypatch):
+    fake_st = _FakeStreamlit()
+    module = _load_module(fake_st, monkeypatch)
+
+    assert module._normalise_image_src("https://example.com/car.png") == (
+        "https://example.com/car.png"
+    )

@@ -1,21 +1,59 @@
 from __future__ import annotations
 
+import base64
+import mimetypes
+from functools import lru_cache
 from html import escape
+from pathlib import Path
 from typing import Any, List
+from urllib.parse import urlparse
 
 import streamlit as st
+
+from src.shared.config.constants import DEFAULT_PLACEHOLDER_IMAGE_PATH, PROJECT_ROOT
 
 _PLACEHOLDER_IMAGE = "/assets/placeholder.png"
 _ACTION_LABELS = ("View Details", "Shortlist", "Enquire")
 
 
+def _is_browser_safe_image_src(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme in {"http", "https", "data"}
+
+
+@lru_cache(maxsize=128)
+def _image_file_to_data_uri(path_value: str) -> str | None:
+    path = Path(path_value)
+    candidates = [path] if path.is_absolute() else [path, PROJECT_ROOT / path]
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            mime_type = mimetypes.guess_type(candidate.name)[0] or "image/png"
+            encoded = base64.b64encode(candidate.read_bytes()).decode("ascii")
+            return f"data:{mime_type};base64,{encoded}"
+    return None
+
+
 def _normalise_image_src(image_path: Any) -> str:
-    if not image_path:
-        return _PLACEHOLDER_IMAGE
-    img_src = str(image_path)
-    if img_src.startswith(("http://", "https://", "/")):
-        return img_src
-    return "/" + img_src.lstrip("./")
+    """Return a browser-renderable image source for recommendation cards.
+
+    Streamlit does not automatically serve arbitrary repository files from
+    ``/assets/...`` URLs. Recommendation API responses therefore use
+    project-relative paths, while this renderer converts local files to data
+    URIs so the HTML card images work without extra static-file routing.
+    Remote URLs and existing data URIs are preserved.
+    """
+    raw = str(image_path).strip() if image_path else ""
+    if raw and _is_browser_safe_image_src(raw):
+        return raw
+
+    if raw:
+        data_uri = _image_file_to_data_uri(raw)
+        if data_uri:
+            return data_uri
+
+    placeholder_data_uri = _image_file_to_data_uri(str(DEFAULT_PLACEHOLDER_IMAGE_PATH))
+    return placeholder_data_uri or _PLACEHOLDER_IMAGE
 
 
 def _money(value: Any) -> str:
