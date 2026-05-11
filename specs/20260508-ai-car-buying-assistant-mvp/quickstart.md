@@ -48,7 +48,6 @@ curl -X POST -H "X-Admin-Token: <token>" http://localhost:8000/admin/flush_offli
 ## Goal
 
 Run the MVP locally via Docker Compose (backend, frontend, Postgres, optional Chroma, Portainer) and validate connectivity automatically, including a Postgres CRUD smoke test.
-The Python frontend and backend are packaged by a single multi-target `docker/Dockerfile`; Docker Compose builds the appropriate target for each service.
 
 ## Prerequisites
 
@@ -117,4 +116,3 @@ What it checks:
 - The validation script requires `requests` and `psycopg[binary]` (included in `requirements.txt`).
 - Chroma is optional; failures are reported but won’t block the rest of the stack.
 - Keep credentials demo-only per the constitution; do not add production complexity.
-- The `backend` and `frontend` services share the same Docker build file and only differ by Compose build target and startup command.
