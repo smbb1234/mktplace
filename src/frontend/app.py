@@ -4,182 +4,533 @@ import streamlit as st
 from src.frontend.api_client.client import BackendClient
 from src.frontend.components.chat_panel import chat_panel
 from src.frontend.components.recommendation_cards import render_recommendation_cards
-from src.frontend.components.finance_panel import finance_panel
-from src.frontend.state.session_state import get_session_id, get_preferences
-from src.frontend.components.preference_controls import preference_controls
 from src.frontend.components.car_detail import car_detail
 from src.frontend.components.enquiry_form import enquiry_form
 from src.frontend.components.summary_cards import summary_cards
+from src.frontend.state.session_state import get_preferences, get_session_id
 
 client = BackendClient()
 
+PAGE_CSS = """
+<style>
+:root {
+  --sky: #0b7cff;
+  --sky-50: #eff7ff;
+  --sky-100: #dceeff;
+  --sky-200: #c8e0ff;
+  --border: rgba(159, 201, 255, 0.62);
+  --ink: #0f172a;
+  --muted: #5b6f93;
+  --shadow: 0 24px 70px rgba(37, 99, 235, 0.13);
+  --soft-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+}
 
-def main():
-    st.set_page_config(page_title="AI Car Buying Assistant")
+html, body, [data-testid="stAppViewContainer"], .stApp {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(126, 200, 255, 0.38), transparent 32%),
+    linear-gradient(135deg, #e4f4ff 0%, #f7fbff 48%, #ffffff 100%);
+}
 
-    # Inject global CSS matching the premium sky-blue theme and layout
+.block-container {
+  max-width: none;
+  padding: 1.25rem 1.5rem 0.9rem;
+}
+
+[data-testid="stHeader"], [data-testid="stToolbar"] {
+  background: transparent;
+}
+
+[data-testid="stVerticalBlock"] { gap: 0.85rem; }
+
+button[kind="secondary"], .stButton > button {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--sky);
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+}
+
+button[kind="secondary"]:hover, .stButton > button:hover {
+  border-color: var(--sky);
+  color: var(--sky);
+  background: #ffffff;
+}
+
+input, textarea {
+  border-radius: 14px !important;
+  border-color: var(--border) !important;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 104px minmax(420px, 460px) minmax(520px, 1fr);
+  gap: 1.35rem;
+  min-height: calc(100vh - 2.4rem);
+  align-items: stretch;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.nav-card {
+  min-height: calc(100vh - 3rem);
+  padding: 1rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-tile {
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.55rem;
+  background: linear-gradient(145deg, #0b7cff, #6bbdff);
+  box-shadow: 0 14px 28px rgba(11, 124, 255, 0.28);
+  margin: 0.4rem auto 1.4rem;
+}
+
+.nav-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.nav-item {
+  min-height: 66px;
+  border-radius: 18px;
+  color: #50627f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.nav-item span { font-size: 1.15rem; }
+
+.nav-item.active {
+  background: linear-gradient(180deg, #f3f9ff, #e8f4ff);
+  border: 1px solid #d7eaff;
+  color: var(--sky);
+  box-shadow: inset 4px 0 0 var(--sky), 0 12px 24px rgba(37, 99, 235, 0.08);
+}
+
+.chat-region, .recommendation-region {
+  min-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.title-card {
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1rem;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-copy h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.9rem, 2.4vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.title-copy p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.chat-card {
+  padding: 1.25rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.recommendation-card {
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.panel-kicker {
+  color: var(--sky);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.panel-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.status-pill {
+  border: 1px solid #bfddff;
+  background: rgba(239, 247, 255, 0.82);
+  color: #2368c4;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.msg-ai {
+  max-width: 88%;
+  background: linear-gradient(180deg, #f7fbff 0%, #ecf6ff 100%);
+  border: 1px solid #dceeff;
+  border-radius: 20px;
+  padding: 0.95rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.8rem;
+  display: flex;
+  gap: 0.75rem;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.06);
+}
+
+.msg-user {
+  margin-left: auto;
+  background: linear-gradient(135deg, #ddf0ff 0%, #b9dcff 100%);
+  border-radius: 20px;
+  padding: 0.85rem 1rem;
+  color: #075bb5;
+  font-weight: 700;
+  max-width: 80%;
+  margin-bottom: 0.8rem;
+}
+
+.ai-avatar {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #0b7cff, #6bbdff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.summary-small {
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(239,247,255,0.92));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.9rem;
+  min-height: 78px;
+  box-shadow: var(--soft-shadow);
+}
+
+.car-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-top: 0.9rem;
+}
+
+.car-card {
+  background: rgba(255,255,255,0.9);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1rem;
+  min-height: 380px;
+  box-shadow: var(--soft-shadow);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.car-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 44px rgba(37, 99, 235, 0.14);
+}
+
+.car-img {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  background: linear-gradient(180deg, #ffffff, #f5fbff);
+  border-radius: 18px;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  background: #d7faf0;
+  color: #0e9f6e;
+  border-radius: 999px;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-block;
+}
+
+.heart { color: #64748b; }
+.heart:hover { color: var(--sky); }
+
+.finance-summary {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(90deg, rgba(244,250,255,0.95), rgba(255,255,255,0.95));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: var(--soft-shadow);
+}
+
+.finance-summary .label, .safety-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.finance-summary .value {
+  color: var(--ink);
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
+
+.cta-link {
+  background: linear-gradient(145deg, #0b7cff, #5fb7ff);
+  color: #fff !important;
+  text-decoration: none;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(11, 124, 255, 0.22);
+  white-space: nowrap;
+}
+
+.safety-note {
+  text-align: center;
+  padding: 0.75rem 1rem 0;
+}
+
+@media (max-width: 1180px) {
+  .car-grid { grid-template-columns: repeat(2, minmax(190px, 1fr)); }
+  .summary-cards { grid-template-columns: 1fr; }
+}
+</style>
+"""
+
+
+def _render_page_css() -> None:
+    st.markdown(PAGE_CSS, unsafe_allow_html=True)
+
+
+def _render_sidebar() -> None:
     st.markdown(
         """
-        <style>
-        :root{--sky:#0B7CFF;--muted:#4F6690;--card-shadow:0 10px 30px rgba(37,99,235,0.08);} 
-        body, .stApp {background: linear-gradient(135deg,#EAF6FF 0%,#F8FBFF 45%,#FFFFFF 100%);} 
-        .main-container{padding:24px;display:flex;gap:24px;height:100vh;box-sizing:border-box;} 
-        .left-sidebar{width:88px;background:rgba(255,255,255,0.9);border-right:1px solid #DCEBFA;padding-top:12px;}
-        .logo-box{width:48px;height:48px;border-radius:8px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:#fff;margin:8px auto;} 
-        .side-item{height:72px;display:flex;align-items:center;justify-content:center;color:#334155;font-size:11px;} 
-        .side-item.active{background:#EFF7FF;border-left:4px solid var(--sky);color:var(--sky);} 
-        .panel{background:rgba(255,255,255,0.88);border:1px solid #D8EAFE;border-radius:22px;padding:24px;box-shadow:0 12px 32px rgba(15,23,42,0.06);overflow:auto;} 
-        .chat-panel{width:460px;min-width:420px;max-width:460px;height:calc(100vh - 48px);background:rgba(255,255,255,0.85);border:1px solid #D8EAFE;border-radius:22px;padding:24px;box-shadow:0 12px 32px rgba(15,23,42,0.06);display:flex;flex-direction:column;} 
-        .recommend-panel{flex:1;min-width:420px;} 
-        .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;} 
-        .title{font-size:28px;font-weight:700;color:#0F172A;} 
-        .subtitle{font-size:14px;color:#4F6690;} 
-        .new-session{height:44px;background:#FFFFFF;border:1px solid #CFE3FF;color:var(--sky);border-radius:12px;padding:8px 14px;} 
-        /* Chat bubbles */
-        .msg-ai{max-width:78%;background:linear-gradient(180deg,#F4FAFF 0%,#EAF4FF 100%);border:1px solid #DCEBFA;border-radius:16px;padding:16px;color:#0F172A;font-size:14px;line-height:1.5;margin-bottom:12px;display:flex;gap:12px;} 
-        .msg-user{align-self:flex-end;background:linear-gradient(135deg,#DCEEFF 0%,#BFDFFF 100%);border-radius:16px;padding:14px 16px;color:#075BB5;font-weight:600;max-width:70%;margin-bottom:12px;} 
-        .ai-avatar{width:36px;height:36px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;} 
-        .quick-chip{display:inline-block;height:38px;padding:0 18px;border:1px solid #BBD7FF;border-radius:10px;background:#fff;color:var(--sky);font-weight:600;margin-right:8px;margin-top:8px;}
-        .car-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:12px;} 
-        .car-card{background:#fff;border:1px solid #DCEBFA;border-radius:18px;padding:18px;min-height:420px;box-shadow:0 10px 24px rgba(15,23,42,0.06);transition:transform .18s,box-shadow .18s;} 
-        .car-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(37,99,235,0.12);} 
-        .car-img{width:100%;height:160px;object-fit:contain;background:#fff;margin-bottom:16px;} 
-        .badge{background:#D7FAF0;color:#0E9F6E;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;display:inline-block;} 
-        .heart{position:absolute;right:12px;top:12px;color:#64748B;} 
-        .heart:hover{color:var(--sky);} 
-        .finance-bar{height:92px;background:linear-gradient(90deg,#F4FAFF 0%,#FFFFFF 100%);border:1px solid #D6E6F8;border-radius:18px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;margin-top:18px;} 
-        .summary-cards{display:flex;gap:12px;margin-bottom:12px;} 
-        .summary-small{background:linear-gradient(180deg,#F8FBFF 0%,#EEF7FF 100%);border:1px solid #D6E6F8;border-radius:16px;padding:12px;width:200px;height:78px;} 
-        </style>
+        <aside class="glass-card nav-card" aria-label="Primary navigation">
+          <div class="logo-tile">🚗</div>
+          <nav class="nav-stack">
+            <div class="nav-item active"><span>💬</span>Chat</div>
+            <div class="nav-item"><span>✨</span>Recommendations</div>
+            <div class="nav-item"><span>💳</span>Finance</div>
+            <div class="nav-item"><span>♡</span>Shortlist</div>
+            <div class="nav-item"><span>⚙️</span>Settings</div>
+          </nav>
+        </aside>
         """,
         unsafe_allow_html=True,
     )
 
-    # Top header row across the main columns (left column reserved for sidebar)
-    top_cols = st.columns([88, 420, 1], gap='large')
-    with top_cols[0]:
-        # empty left column for sidebar alignment
-        st.markdown("", unsafe_allow_html=True)
-    with top_cols[1]:
-        st.markdown(
-            """
-            <div class='header' style='align-items:flex-start;'>
-              <div>
-                <div class='title'>AI Car Buying Assistant ✨</div>
-                <div class='subtitle'>Your personal car expert</div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with top_cols[2]:
-        st.markdown(
-            """
-            <div style='display:flex;align-items:center;justify-content:flex-end;height:92px;'>
-              <button class='new-session' style='width:132px;height:44px;display:flex;align-items:center;justify-content:center;'>⟳&nbsp;&nbsp;New Session</button>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
-    # Main area: fetch recommendations for session
-    sid = get_session_id()
-    prefs = get_preferences()
-
-    # Main three-column layout: sidebar (88px), chat (420px), recommendations (rest)
-    cols = st.columns([88, 420, 1], gap="large")
-    # LEFT SIDEBAR
-    with cols[0]:
-        st.markdown(
-            """
-            <div style='height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:20px;border-right:1px solid #DCEBFA;background:#FFFFFF;box-shadow:0 8px 30px rgba(37,99,235,0.08);'>
-              <div style='height:100px;display:flex;align-items:center;justify-content:center;width:100%;'>
-                <div style='width:48px;height:48px;border-radius:14px;background:#0B7CFF;display:flex;align-items:center;justify-content:center;color:white;'>🚗</div>
-              </div>
-              <div style='margin-top:20px;width:100%;'>
-                <div style='height:82px;display:flex;align-items:center;justify-content:center;color:#0B7CFF;background:#EFF7FF;border-left:4px solid #0B7CFF;'>
-                  <div style='text-align:center;font-size:11px;'>Chat</div>
+def _render_title_card() -> None:
+    with st.container():
+        left, right = st.columns([1, 0.22])
+        with left:
+            st.markdown(
+                """
+                <div class="glass-card title-card">
+                  <div class="title-row">
+                    <div class="title-copy">
+                      <h1>AI Car Buying Assistant ✨</h1>
+                      <p>Your personal car expert for smarter recommendations, finance planning,
+                      and confident enquiries.</p>
+                    </div>
+                  </div>
                 </div>
-                <div style='height:82px;display:flex;align-items:center;justify-content:center;color:#334155;'>
-                  <div style='text-align:center;font-size:11px;'>Cars</div>
-                </div>
-                <div style='height:82px;display:flex;align-items:center;justify-content:center;color:#334155;'>
-                  <div style='text-align:center;font-size:11px;'>Finance</div>
-                </div>
-                <div style='height:82px;display:flex;align-items:center;justify-content:center;color:#334155;'>
-                  <div style='text-align:center;font-size:11px;'>Shortlist</div>
-                </div>
-                <div style='height:82px;display:flex;align-items:center;justify-content:center;color:#334155;'>
-                  <div style='text-align:center;font-size:11px;'>Settings</div>
-                </div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+                """,
+                unsafe_allow_html=True,
+            )
+        with right:
+            if st.button("⟳ New Session", use_container_width=True):
+                st.session_state.pop("chat_messages", None)
+                st.session_state.pop("preferences", None)
+                st.session_state.pop("selected_vehicle", None)
+                st.session_state.pop("selected_vehicle_obj", None)
+                st.session_state["session_id"] = f"sess-{len(st.session_state)}"
+                st.rerun()
 
-    # CHAT PANEL (middle)
-    with cols[1]:
-        st.markdown("<div class='chat-panel'>", unsafe_allow_html=True)
-        chat_panel()
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    # RECOMMENDATIONS PANEL (right)
-    with cols[2]:
-        prefs = get_preferences()
-        budget = prefs.get('monthly_budget')
-        term = st.session_state.get('finance_term', 36)
-        deposit = st.session_state.get('finance_deposit', 1000)
-        st.markdown(
-            """
-            <div style='margin-bottom:8px;'>
-              <div style='font-size:20px;font-weight:700;'>Top Recommendations</div>
-              <div style='font-size:13px;color:#6b7a90;'>Based on your preferences</div>
-            </div>
-        """,
-            unsafe_allow_html=True,
-        )
-        summary_cards(budget, term, deposit)
-        try:
-            recs = client.get_recommendations(session_id=sid)
-        except Exception:
-            recs = []
-        # limit to top 9 for display
-        render_recommendation_cards(recs[:9] if recs else [])
-        # finance summary bar
-        st.markdown(
-            f"""
-            <div class='card' style='margin-top:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;'>
-              <div>
-                <div style='font-size:13px;color:#6b7a90;'>Finance Summary</div>
-                <div style='font-size:14px;'>Budget £{int(budget) if budget else 0} • Term {int(term)} months • Deposit £{int(deposit)}</div>
-              </div>
-              <div>
-                <a href='#' style='background:#1e90ff;color:#fff;text-decoration:none;padding:8px 14px;border-radius:999px;'>View Finance Options</a>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+def _normalise_recommendations(raw_recs: object) -> list[dict]:
+    if isinstance(raw_recs, list):
+        return [item for item in raw_recs if isinstance(item, dict)]
+    if isinstance(raw_recs, dict):
+        for key in ("recommendations", "results", "vehicles", "items"):
+            value = raw_recs.get(key)
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)]
+    return []
 
-    # show selected vehicle detail or enquiry form
-    sel = st.session_state.get('selected_vehicle_obj')
-    if sel:
-        car_detail(sel)
-    if st.session_state.get('selected_vehicle'):
-        enquiry_form(default_vehicle_id=st.session_state.get('selected_vehicle'))
 
-    # trust note footer
+def _load_recommendations(session_id: str) -> tuple[list[dict], bool]:
+    try:
+        raw_recs = client.get_recommendations(session_id=session_id)
+    except Exception:
+        return [], False
+    return _normalise_recommendations(raw_recs), True
+
+
+def _render_chat_panel() -> None:
+    st.markdown('<section class="glass-card chat-card">', unsafe_allow_html=True)
     st.markdown(
         """
-        <div style='margin-top:18px;font-size:12px;color:#6b7a90;'>
-          Your data is secure and never shared with third parties.
+        <div class="panel-heading">
+          <div>
+            <div class="panel-kicker">Assistant chat</div>
+            <h2>Conversation</h2>
+            <p>Tell us about your budget, lifestyle, fuel preference, and must-have features.</p>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+    chat_panel()
+    st.markdown("</section>", unsafe_allow_html=True)
+
+
+def _render_recommendations_panel(session_id: str) -> None:
+    prefs = get_preferences()
+    budget = prefs.get("monthly_budget")
+    term = st.session_state.get("finance_term", 36)
+    deposit = st.session_state.get("finance_deposit", 1000)
+    recs, backend_available = _load_recommendations(session_id)
+    status = "Live recommendations" if backend_available else "Offline preview"
+
+    st.markdown('<section class="glass-card recommendation-card">', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="panel-heading">
+          <div>
+            <div class="panel-kicker">Recommendations</div>
+            <h2>Top Recommendations</h2>
+            <p>Based on your preferences and finance profile.</p>
+          </div>
+          <div class="status-pill">{status}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    summary_cards(budget, term, deposit)
+    if not backend_available:
+        st.info(
+            "Backend is not connected yet, so this page is showing the base UI. "
+            "Start the API to load personalised vehicles."
+        )
+    render_recommendation_cards(recs[:9])
+    st.markdown(
+        f"""
+        <div class="finance-summary">
+          <div>
+            <div class="label">Finance Summary</div>
+            <div class="value">Budget £{int(budget) if budget else 0} •
+            Term {int(term)} months • Deposit £{int(deposit)}</div>
+          </div>
+          <a class="cta-link" href="#">View Finance Options</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</section>", unsafe_allow_html=True)
+
+
+def _render_safety_footer() -> None:
+    st.markdown(
+        """
+        <footer class="safety-note">
+          🔒 Your data is secure, used only to improve your car search,
+          and never shared with third parties.
+        </footer>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def main():
+    st.set_page_config(page_title="AI Car Buying Assistant", layout="wide")
+    _render_page_css()
+
+    session_id = get_session_id()
+
+    nav_col, chat_col, rec_col = st.columns([0.62, 2.8, 5.4], gap="large")
+    with nav_col:
+        _render_sidebar()
+    with chat_col:
+        st.markdown('<main class="chat-region">', unsafe_allow_html=True)
+        _render_title_card()
+        _render_chat_panel()
+        st.markdown("</main>", unsafe_allow_html=True)
+    with rec_col:
+        st.markdown('<main class="recommendation-region">', unsafe_allow_html=True)
+        _render_recommendations_panel(session_id)
+        st.markdown("</main>", unsafe_allow_html=True)
+
+    selected_vehicle = st.session_state.get("selected_vehicle_obj")
+    if selected_vehicle:
+        car_detail(selected_vehicle)
+    if st.session_state.get("selected_vehicle"):
+        enquiry_form(default_vehicle_id=st.session_state.get("selected_vehicle"))
+
+    _render_safety_footer()
 
 
 if __name__ == "__main__":
     main()
-
