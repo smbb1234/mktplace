@@ -37,9 +37,9 @@ These tasks make Docker Compose the default local runtime and ensure source moun
   - Notes: `.env.docker` contains container hostnames (postgres, chroma, backend) and in-container paths such as `/app/data` and `/app/assets`.
 
 - [x] T071 Ensure Compose service volume mounts expose source code, `./data` and `./assets` into containers.
-  - Target files: `docker-compose.yml`, `docker/Dockerfile`
+  - Target files: `docker-compose.yml`, `docker/Dockerfile.backend`, `docker/Dockerfile.frontend`
   - Dependencies: T001, T070
-  - Notes: Volumes should enable live code edits from VS Code with `uvicorn --reload` and Streamlit auto-reload; Compose builds the shared Dockerfile with separate backend/frontend targets.
+  - Notes: Volumes should enable live code edits from VS Code with `uvicorn --reload` and Streamlit auto-reload.
 
 - [x] T072 Add developer helper scripts for Docker Compose: `scripts/docker-up.sh`, `scripts/docker-down.sh`.
   - Target files: `scripts/docker-up.sh`, `scripts/docker-down.sh`
