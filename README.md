@@ -21,6 +21,7 @@ When running the full Docker stack:
 ## Docker-first quickstart
 
 Docker Compose is the recommended local runtime because it starts the frontend, backend, Postgres, ChromaDB, and Portainer with the same service names the containers expect.
+Both Python app services are built from the shared `docker/Dockerfile`; Compose selects the `backend` or `frontend` build target and keeps the service commands separate.
 
 1. Create `.env.docker`:
 
@@ -130,6 +131,7 @@ See `docs/frontend-ui.md` for a fuller UI map and `docs/testing.md` for test str
 ## Operational notes
 
 - Source code, data, and assets are mounted into the containers via volumes, so local edits are reflected in running containers.
+- Backend and frontend images share `docker/Dockerfile`, which installs the common Python dependencies once in a reusable runtime stage before exposing dedicated `backend` and `frontend` targets.
 - Backend uses `uvicorn --reload`; frontend Streamlit reloads on source changes.
 - Inventory CSV defaults to `data/dataset.csv`; car images are served from `assets/` where available.
 - If Postgres is unavailable during enquiry submission, the API queues the enquiry in `data/offline_enquiries.jsonl` and returns HTTP `202`. Flush queued enquiries after Postgres is restored with `docker compose exec backend python -m src.backend.scripts.flush_offline_enquiries` or `POST /admin/flush_offline`.

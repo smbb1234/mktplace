@@ -72,8 +72,7 @@ tests/
 └── integration/
 
 docker/
-├── Dockerfile.backend
-└── Dockerfile.frontend
+└── Dockerfile
 
 scripts/
 ├── docker-up.sh
@@ -84,7 +83,7 @@ scripts/
 docker-compose.yml
 ```
 
-**Structure Decision**: Single repository with `src/backend` + `src/frontend`, Docker-first runtime. A new host-run `scripts/validate_stack.py` performs connectivity checks post `docker compose up`.
+**Structure Decision**: Single repository with `src/backend` + `src/frontend`, Docker-first runtime, and one multi-target `docker/Dockerfile` for both Python app services. A new host-run `scripts/validate_stack.py` performs connectivity checks post `docker compose up`.
 
 ## Complexity Tracking
 
