@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from src.backend.schemas.chat import ChatMessage, ChatResponse
 from src.backend.services.ai.preference_extractor import extract_preferences_from_text
+from src.backend.services.inventory.catalog import get_default_catalog
 from src.backend.services.ai.conversation_orchestrator import (
     create_or_get_session,
     add_message,
@@ -12,28 +13,40 @@ from src.backend.services.ai.conversation_orchestrator import (
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-FUEL_QUICK_REPLIES = ["Petrol", "Diesel", "Hybrid / Electric"]
-TRANSMISSION_QUICK_REPLIES = ["Automatic", "Manual"]
+def _catalog_options(field_name: str) -> list[str]:
+    try:
+        catalog = get_default_catalog()
+        values = {
+            str(getattr(vehicle, field_name)).strip()
+            for vehicle in catalog.vehicles.values()
+            if getattr(vehicle, field_name, None)
+        }
+    except Exception:
+        return []
+    return sorted(values)
 
 
 def _build_next_reply(preferences: dict) -> tuple[str, list[str] | None]:
     if not preferences.get("monthly_budget"):
-        return "What's your monthly budget for the car?", None
+        return "Hi! Great to meet you. To begin, what monthly budget feels comfortable?", None
 
     if not preferences.get("fuel_type"):
-        return "Great — what fuel type would you prefer?", FUEL_QUICK_REPLIES
+        fuel_options = _catalog_options("fuel_type")
+        return "Nice — what fuel type would you like?", fuel_options or None
+
+    if not preferences.get("body_type"):
+        body_options = _catalog_options("body_type")
+        return "Great choice. What body style suits you best?", body_options or None
 
     if not preferences.get("transmission"):
-        return (
-            "Got it. Would you prefer automatic or manual transmission?",
-            TRANSMISSION_QUICK_REPLIES,
-        )
+        transmission_options = _catalog_options("transmission")
+        return "Perfect. Do you prefer automatic or manual transmission?", transmission_options or None
 
     if not preferences.get("family_size"):
-        return "Thanks — how many people do you usually need seats for?", None
+        return "How many seats do you usually need?", None
 
     return (
-        "Thanks — I have the key details I need. I'm generating recommendations for you now.",
+        "Awesome — I have enough to start matching cars. I’ll keep refining with a couple more questions if needed.",
         None,
     )
 
@@ -55,6 +68,7 @@ def post_message(payload: ChatMessage):
         intent=current.get("intent"),
         monthly_budget=current.get("monthly_budget"),
         fuel_type=current.get("fuel_type"),
+        body_type=current.get("body_type"),
         transmission=current.get("transmission"),
         family_size=current.get("family_size"),
         quick_replies=quick_replies,

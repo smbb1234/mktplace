@@ -64,9 +64,9 @@ def test_initial_messages_exist(chat_panel_module):
     messages = chat_panel_module.st.session_state["chat_messages"]
     assert [message["role"] for message in messages] == ["ai", "ai", "ai"]
     assert [message["text"] for message in messages] == [
-        "Hi! I'm your AI car buying assistant.",
-        "I'll help you find the perfect car that fits your needs and budget.",
-        "To get started, what's your monthly budget for the car?",
+        "👋 Hi there! I'm your AI car buying assistant.",
+        "I’ll ask a few quick questions to find your best-fit car.",
+        "To begin, what monthly budget feels right for you?",
     ]
     assert all("time" in message for message in messages)
 
@@ -98,29 +98,16 @@ def test_post_chat_preferences_are_written_to_state(chat_panel_module):
     }
 
 
-def test_next_ai_message_asks_correct_next_question(chat_panel_module):
-    assert (
-        chat_panel_module._next_ai_message({})["text"]
-        == "What's your monthly budget for the car?"
-    )
+def test_send_message_uses_backend_reply_and_quick_replies(chat_panel_module):
+    class Backend:
+        def post_chat(self, payload):
+            return {"reply": "What body type do you want?", "quick_replies": ["SUV", "Hatchback"]}
 
-    fuel_message = chat_panel_module._next_ai_message({"monthly_budget": 400})
-    assert fuel_message["text"] == "Great — what fuel type would you prefer?"
-    assert fuel_message["quick_replies"] == ["Petrol", "Diesel", "Hybrid / Electric"]
-
-    transmission_message = chat_panel_module._next_ai_message(
-        {"monthly_budget": 400, "fuel_type": "Diesel"}
-    )
-    assert (
-        transmission_message["text"]
-        == "Got it. Would you prefer automatic or manual transmission?"
-    )
-    assert transmission_message["quick_replies"] == ["Automatic", "Manual"]
-
-    done_message = chat_panel_module._next_ai_message(
-        {"monthly_budget": 400, "fuel_type": "Diesel", "transmission": "Manual"}
-    )
-    assert "generating recommendations" in done_message["text"]
+    chat_panel_module._send_message("My budget is 500", "sess-1", backend_client=Backend())
+    last_message = chat_panel_module.st.session_state["chat_messages"][-1]
+    assert last_message["role"] == "ai"
+    assert last_message["text"] == "What body type do you want?"
+    assert last_message["quick_replies"] == ["SUV", "Hatchback"]
 
 
 def test_quick_reply_uses_send_message_logic(chat_panel_module, monkeypatch):

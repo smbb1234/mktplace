@@ -15,15 +15,14 @@ PREFERENCE_KEYS = {
     "intent",
     "monthly_budget",
     "fuel_type",
+    "body_type",
     "transmission",
     "family_size",
 }
-FUEL_QUICK_REPLIES = ["Petrol", "Diesel", "Hybrid / Electric"]
-TRANSMISSION_QUICK_REPLIES = ["Automatic", "Manual"]
 INITIAL_MESSAGE_TEXTS = [
-    "Hi! I'm your AI car buying assistant.",
-    "I'll help you find the perfect car that fits your needs and budget.",
-    "To get started, what's your monthly budget for the car?",
+    "👋 Hi there! I'm your AI car buying assistant.",
+    "I’ll ask a few quick questions to find your best-fit car.",
+    "To begin, what monthly budget feels right for you?",
 ]
 
 
@@ -73,33 +72,6 @@ def _extract_preferences(response: Any) -> dict[str, Any]:
     }
 
 
-def _next_ai_message(preferences: dict[str, Any]) -> dict[str, Any]:
-    if not preferences.get("monthly_budget"):
-        return _create_message(
-            "ai",
-            "What's your monthly budget for the car?",
-        )
-
-    if not preferences.get("fuel_type"):
-        return _create_message(
-            "ai",
-            "Great — what fuel type would you prefer?",
-            quick_replies=FUEL_QUICK_REPLIES,
-        )
-
-    if not preferences.get("transmission"):
-        return _create_message(
-            "ai",
-            "Got it. Would you prefer automatic or manual transmission?",
-            quick_replies=TRANSMISSION_QUICK_REPLIES,
-        )
-
-    return _create_message(
-        "ai",
-        "Thanks — I have the key details I need. I'm generating recommendations for you now.",
-    )
-
-
 def _safe_text(value: Any) -> str:
     return escape(str(value), quote=True)
 
@@ -147,8 +119,10 @@ def chat_panel() -> None:
 
     msg_area = st.container()
     with msg_area:
+        st.markdown("<div class='chat-scroll-frame'>", unsafe_allow_html=True)
         for message in st.session_state["chat_messages"]:
             _render_message(message)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     quick_replies = _latest_quick_replies()
     if quick_replies:
@@ -207,8 +181,13 @@ def _send_message(
         if returned_preferences:
             set_preferences(returned_preferences)
 
-        current_preferences = st.session_state.get("preferences", {})
-        st.session_state["chat_messages"].append(_next_ai_message(current_preferences))
+        st.session_state["chat_messages"].append(
+            _create_message(
+                "ai",
+                response.get("reply", "Thanks! Tell me a little more so I can refine your options."),
+                quick_replies=response.get("quick_replies") or None,
+            )
+        )
     except Exception:
         st.session_state["chat_messages"].append(
             _create_message("ai", "Sorry, failed to reach backend.")

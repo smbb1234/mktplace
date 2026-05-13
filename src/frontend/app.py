@@ -175,6 +175,14 @@ input, textarea {
   overflow: hidden;
 }
 
+.chat-scroll-frame {
+  height: calc(100vh - 22rem);
+  min-height: 360px;
+  max-height: calc(100vh - 22rem);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
 .recommendation-card {
   padding: 1.25rem;
   flex: 1;
