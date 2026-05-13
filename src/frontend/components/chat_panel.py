@@ -98,7 +98,7 @@ def _render_message(message: dict[str, Any]) -> None:
 
 
 def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
-    parts: list[str] = ["<div class='chat-scroll-frame'>"]
+    parts: list[str] = [f"<div class='chat-scroll-frame' data-message-count='{len(messages)}'>"]
     for message in messages:
         safe_text = _safe_text(message.get("text", ""))
         safe_time = _safe_text(message.get("time", ""))
@@ -121,14 +121,37 @@ def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
         components.html(
             """
             <script>
-            const scrollToBottom = () => {
-              const frames = window.parent.document.querySelectorAll('.chat-scroll-frame');
-              if (!frames.length) return;
-              const frame = frames[frames.length - 1];
+            const stateKey = "__chat_scroll_state";
+            const root = window.parent;
+            root[stateKey] = root[stateKey] || { stickToBottom: true, lastMessageCount: 0 };
+            const state = root[stateKey];
+
+            const frames = root.document.querySelectorAll('.chat-scroll-frame');
+            if (!frames.length) return;
+            const frame = frames[frames.length - 1];
+
+            const threshold = 24;
+            const distanceFromBottom = frame.scrollHeight - frame.scrollTop - frame.clientHeight;
+            if (distanceFromBottom > threshold) {
+              state.stickToBottom = false;
+            } else if (distanceFromBottom <= 2) {
+              state.stickToBottom = true;
+            }
+
+            if (!frame.dataset.scrollBound) {
+              frame.addEventListener('scroll', () => {
+                const gap = frame.scrollHeight - frame.scrollTop - frame.clientHeight;
+                state.stickToBottom = gap <= threshold;
+              });
+              frame.dataset.scrollBound = "1";
+            }
+
+            const currentCount = Number(frame.dataset.messageCount || "0");
+            const hasNewMessages = currentCount > (state.lastMessageCount || 0);
+            if (state.stickToBottom || hasNewMessages && state.stickToBottom !== false) {
               frame.scrollTop = frame.scrollHeight;
-            };
-            scrollToBottom();
-            setTimeout(scrollToBottom, 60);
+            }
+            state.lastMessageCount = currentCount;
             </script>
             """,
             height=0,
