@@ -15,15 +15,14 @@ PREFERENCE_KEYS = {
     "intent",
     "monthly_budget",
     "fuel_type",
+    "body_type",
     "transmission",
     "family_size",
 }
-FUEL_QUICK_REPLIES = ["Petrol", "Diesel", "Hybrid / Electric"]
-TRANSMISSION_QUICK_REPLIES = ["Automatic", "Manual"]
 INITIAL_MESSAGE_TEXTS = [
-    "Hi! I'm your AI car buying assistant.",
-    "I'll help you find the perfect car that fits your needs and budget.",
-    "To get started, what's your monthly budget for the car?",
+    "👋 Hi there! I'm your AI car buying assistant.",
+    "I’ll ask a few quick questions to find your best-fit car.",
+    "To begin, what monthly budget feels right for you?",
 ]
 
 
@@ -73,33 +72,6 @@ def _extract_preferences(response: Any) -> dict[str, Any]:
     }
 
 
-def _next_ai_message(preferences: dict[str, Any]) -> dict[str, Any]:
-    if not preferences.get("monthly_budget"):
-        return _create_message(
-            "ai",
-            "What's your monthly budget for the car?",
-        )
-
-    if not preferences.get("fuel_type"):
-        return _create_message(
-            "ai",
-            "Great — what fuel type would you prefer?",
-            quick_replies=FUEL_QUICK_REPLIES,
-        )
-
-    if not preferences.get("transmission"):
-        return _create_message(
-            "ai",
-            "Got it. Would you prefer automatic or manual transmission?",
-            quick_replies=TRANSMISSION_QUICK_REPLIES,
-        )
-
-    return _create_message(
-        "ai",
-        "Thanks — I have the key details I need. I'm generating recommendations for you now.",
-    )
-
-
 def _safe_text(value: Any) -> str:
     return escape(str(value), quote=True)
 
@@ -125,11 +97,62 @@ def _render_message(message: dict[str, Any]) -> None:
         )
 
 
+def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
+    parts: list[str] = [f"<div class='chat-scroll-frame' data-message-count='{len(messages)}'>"]
+    for message in messages:
+        safe_text = _safe_text(message.get("text", ""))
+        safe_time = _safe_text(message.get("time", ""))
+        if message.get("role") == "ai":
+            parts.append(
+                "<div class='msg-ai'>"
+                "<div class='ai-avatar'>🤖</div>"
+                f"<div><div>{safe_text}</div><div class='msg-time'>{safe_time}</div></div>"
+                "</div>"
+            )
+        else:
+            parts.append(
+                f"<div class='msg-user'>{safe_text}<div class='msg-time'>{safe_time}</div></div>"
+            )
+    parts.append("</div>")
+    st.markdown("".join(parts), unsafe_allow_html=True)
+    try:
+        import streamlit.components.v1 as components
+
+        components.html(
+            """
+            <script>
+            const root = window.parent;
+            const frames = root.document.querySelectorAll('.chat-scroll-frame');
+            if (!frames.length) return;
+            const frame = frames[frames.length - 1];
+
+            const forceBottom = () => { frame.scrollTop = frame.scrollHeight; };
+            forceBottom();
+            requestAnimationFrame(forceBottom);
+            setTimeout(forceBottom, 50);
+            setTimeout(forceBottom, 150);
+            setTimeout(forceBottom, 300);
+
+            if (!frame.dataset.observeBottom) {
+              const observer = new MutationObserver(() => forceBottom());
+              observer.observe(frame, { childList: true, subtree: true, characterData: true });
+              frame.dataset.observeBottom = "1";
+            }
+            </script>
+            """,
+            height=0,
+        )
+    except Exception:
+        pass
+
+
 def _latest_quick_replies() -> list[str]:
-    for message in reversed(st.session_state.get("chat_messages", [])):
-        replies = message.get("quick_replies")
-        if message.get("role") == "ai" and replies:
-            return list(replies)
+    messages = st.session_state.get("chat_messages", [])
+    if not messages:
+        return []
+    latest = messages[-1]
+    if latest.get("role") == "ai" and latest.get("quick_replies"):
+        return list(latest["quick_replies"])
     return []
 
 
@@ -147,8 +170,7 @@ def chat_panel() -> None:
 
     msg_area = st.container()
     with msg_area:
-        for message in st.session_state["chat_messages"]:
-            _render_message(message)
+        _render_messages_frame(st.session_state["chat_messages"])
 
     quick_replies = _latest_quick_replies()
     if quick_replies:
@@ -207,8 +229,13 @@ def _send_message(
         if returned_preferences:
             set_preferences(returned_preferences)
 
-        current_preferences = st.session_state.get("preferences", {})
-        st.session_state["chat_messages"].append(_next_ai_message(current_preferences))
+        st.session_state["chat_messages"].append(
+            _create_message(
+                "ai",
+                response.get("reply", "Thanks! Tell me a little more so I can refine your options."),
+                quick_replies=response.get("quick_replies") or None,
+            )
+        )
     except Exception:
         st.session_state["chat_messages"].append(
             _create_message("ai", "Sorry, failed to reach backend.")

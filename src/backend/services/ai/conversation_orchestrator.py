@@ -11,7 +11,12 @@ def create_or_get_session(session_id: str | None) -> Dict[str, Any]:
         return _SESSIONS[session_id]
     # create new
     sid = session_id or "sess-" + str(len(_SESSIONS) + 1)
-    _SESSIONS[sid] = {"session_id": sid, "preferences": {}, "messages": []}
+    _SESSIONS[sid] = {
+        "session_id": sid,
+        "preferences": {},
+        "messages": [],
+        "last_question_key": None,
+    }
     return _SESSIONS[sid]
 
 
@@ -28,3 +33,13 @@ def update_preferences(session_id: str, prefs: Dict[str, Any]) -> None:
 def get_preferences(session_id: str) -> Dict[str, Any]:
     s = create_or_get_session(session_id)
     return s.get("preferences", {})
+
+
+def set_last_question_key(session_id: str, key: str | None) -> None:
+    s = create_or_get_session(session_id)
+    s["last_question_key"] = key
+
+
+def get_last_question_key(session_id: str) -> str | None:
+    s = create_or_get_session(session_id)
+    return s.get("last_question_key")

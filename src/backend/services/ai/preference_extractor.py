@@ -26,6 +26,21 @@ def extract_preferences_from_text(text: str) -> Dict[str, Any]:
         prefs["transmission"] = "Automatic"
     if "manual" in text.lower():
         prefs["transmission"] = "Manual"
+    # body type
+    body_terms = {
+        "suv": "SUV",
+        "saloon": "Saloon",
+        "sedan": "Sedan",
+        "hatchback": "Hatchback",
+        "estate": "Estate",
+        "coupe": "Coupe",
+        "convertible": "Convertible",
+    }
+    lowered = text.lower()
+    for key, value in body_terms.items():
+        if key in lowered:
+            prefs["body_type"] = value
+            break
     # family size / passenger count
     family_match = re.search(
         r"(?:family of|family size|household of|for)\s+(\d{1,2})\s*(?:people|persons|passengers|seats?)?",
