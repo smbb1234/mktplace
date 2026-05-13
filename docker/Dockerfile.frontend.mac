@@ -16,12 +16,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    openssl \ 
+    libpq-dev \
+    && update-ca-certificates
+
+RUN rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
-RUN python -m pip install --upgrade pip setuptools wheel \
-    && python -m pip install -r requirements.txt
+RUN python -m pip install --upgrade \
+    --trusted-host pypi.org \ 
+    --trusted-host files.pythonhosted.org \ 
+    pip \
+    setuptools \
+    wheel \
+    certifi
+
+RUN python -m pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 COPY . .
 
