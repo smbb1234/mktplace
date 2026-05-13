@@ -114,23 +114,36 @@ def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
                 f"<div class='msg-user'>{safe_text}<div class='msg-time'>{safe_time}</div></div>"
             )
     parts.append("</div>")
-    parts.append(
-        "<script>"
-        "const frames = window.parent.document.querySelectorAll('.chat-scroll-frame');"
-        "if (frames.length) {"
-        "  const frame = frames[frames.length - 1];"
-        "  frame.scrollTop = frame.scrollHeight;"
-        "}"
-        "</script>"
-    )
     st.markdown("".join(parts), unsafe_allow_html=True)
+    try:
+        import streamlit.components.v1 as components
+
+        components.html(
+            """
+            <script>
+            const scrollToBottom = () => {
+              const frames = window.parent.document.querySelectorAll('.chat-scroll-frame');
+              if (!frames.length) return;
+              const frame = frames[frames.length - 1];
+              frame.scrollTop = frame.scrollHeight;
+            };
+            scrollToBottom();
+            setTimeout(scrollToBottom, 60);
+            </script>
+            """,
+            height=0,
+        )
+    except Exception:
+        pass
 
 
 def _latest_quick_replies() -> list[str]:
-    for message in reversed(st.session_state.get("chat_messages", [])):
-        replies = message.get("quick_replies")
-        if message.get("role") == "ai" and replies:
-            return list(replies)
+    messages = st.session_state.get("chat_messages", [])
+    if not messages:
+        return []
+    latest = messages[-1]
+    if latest.get("role") == "ai" and latest.get("quick_replies"):
+        return list(latest["quick_replies"])
     return []
 
 
