@@ -87,7 +87,7 @@ def check_portainer() -> dict:
 
 def check_chroma() -> dict:
     base = os.environ.get("CHROMA_URL", "http://localhost:8001")
-    for path in ("/api/v1/heartbeat", "/api/v1", "/api/health", "/"):
+    for path in ("/api/v2/heartbeat", "/api/v1/heartbeat", "/api/v2", "/api/v1", "/api/health", "/"):
         url = base + path
         try:
             # Allow longer warmup for Chroma.
