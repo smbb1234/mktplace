@@ -29,6 +29,10 @@ def get_session_id() -> str:
 
 def set_preferences(prefs: dict) -> None:
     st.session_state.setdefault("preferences", {}).update(prefs)
+    if prefs.get("deposit_gbp") is not None:
+        st.session_state["finance_deposit"] = prefs["deposit_gbp"]
+    if prefs.get("term_months") is not None:
+        st.session_state["finance_term"] = prefs["term_months"]
 
 
 def get_preferences() -> dict:
