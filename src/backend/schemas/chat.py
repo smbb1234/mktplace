@@ -17,9 +17,21 @@ class PreferenceExtractionResponse(BaseModel):
     body_type: Optional[str] = None
     transmission: Optional[str] = None
     family_size: Optional[int] = None
+    doors: Optional[int] = None
+    seats: Optional[int] = None
+    mileage_range: Optional[str] = None
+    monthly_from_gbp: Optional[float] = None
+    deposit_gbp: Optional[float] = None
+    term_months: Optional[int] = None
+    annual_mileage_limit: Optional[int] = None
+    employment_status: Optional[str] = None
+    part_exchange: Optional[str] = None
+    callback_opt_in: Optional[str] = None
 
 
 class ChatResponse(PreferenceExtractionResponse):
     session_id: str
     reply: str
     quick_replies: Optional[list[str]] = None
+    filters_applied: bool = True
+    next_question_delay_seconds: int = 2

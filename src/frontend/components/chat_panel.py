@@ -14,10 +14,20 @@ client = BackendClient()
 PREFERENCE_KEYS = {
     "intent",
     "monthly_budget",
+    "monthly_from_gbp",
+    "deposit_gbp",
+    "term_months",
     "fuel_type",
     "body_type",
     "transmission",
     "family_size",
+    "mileage_range",
+    "doors",
+    "seats",
+    "annual_mileage_limit",
+    "employment_status",
+    "part_exchange",
+    "callback_opt_in",
 }
 INITIAL_MESSAGE_TEXTS = [
     "👋 Hi there! I'm your AI car buying assistant.",
