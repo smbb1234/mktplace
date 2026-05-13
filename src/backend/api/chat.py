@@ -59,6 +59,19 @@ def post_message(payload: ChatMessage):
     session_id = s["session_id"]
     add_message(session_id, payload.message)
     prefs = extract_preferences_from_text(payload.message)
+    existing = get_preferences(session_id)
+    # Context-aware fallback: if the assistant is collecting seats and the
+    # user replies with just a number (e.g., "5"), treat it as family size.
+    if (
+        "family_size" not in prefs
+        and existing.get("family_size") is None
+        and existing.get("transmission")
+    ):
+        stripped = payload.message.strip()
+        if stripped.isdigit():
+            value = int(stripped)
+            if 1 <= value <= 9:
+                prefs["family_size"] = value
     update_preferences(session_id, prefs)
     current = get_preferences(session_id)
     reply, quick_replies = _build_next_reply(current)

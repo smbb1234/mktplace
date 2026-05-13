@@ -97,6 +97,26 @@ def _render_message(message: dict[str, Any]) -> None:
         )
 
 
+def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
+    parts: list[str] = ["<div class='chat-scroll-frame'>"]
+    for message in messages:
+        safe_text = _safe_text(message.get("text", ""))
+        safe_time = _safe_text(message.get("time", ""))
+        if message.get("role") == "ai":
+            parts.append(
+                "<div class='msg-ai'>"
+                "<div class='ai-avatar'>🤖</div>"
+                f"<div><div>{safe_text}</div><div class='msg-time'>{safe_time}</div></div>"
+                "</div>"
+            )
+        else:
+            parts.append(
+                f"<div class='msg-user'>{safe_text}<div class='msg-time'>{safe_time}</div></div>"
+            )
+    parts.append("</div>")
+    st.markdown("".join(parts), unsafe_allow_html=True)
+
+
 def _latest_quick_replies() -> list[str]:
     for message in reversed(st.session_state.get("chat_messages", [])):
         replies = message.get("quick_replies")
@@ -119,10 +139,7 @@ def chat_panel() -> None:
 
     msg_area = st.container()
     with msg_area:
-        st.markdown("<div class='chat-scroll-frame'>", unsafe_allow_html=True)
-        for message in st.session_state["chat_messages"]:
-            _render_message(message)
-        st.markdown("</div>", unsafe_allow_html=True)
+        _render_messages_frame(st.session_state["chat_messages"])
 
     quick_replies = _latest_quick_replies()
     if quick_replies:
