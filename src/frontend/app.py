@@ -176,9 +176,9 @@ input, textarea {
 }
 
 .chat-scroll-frame {
-  height: calc(100vh - 22rem);
-  min-height: 360px;
-  max-height: calc(100vh - 22rem);
+  height: calc(100vh - 26rem);
+  min-height: 300px;
+  max-height: calc(100vh - 26rem);
   overflow-y: auto;
   padding-right: 0.25rem;
 }

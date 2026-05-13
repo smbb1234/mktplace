@@ -114,6 +114,15 @@ def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
                 f"<div class='msg-user'>{safe_text}<div class='msg-time'>{safe_time}</div></div>"
             )
     parts.append("</div>")
+    parts.append(
+        "<script>"
+        "const frames = window.parent.document.querySelectorAll('.chat-scroll-frame');"
+        "if (frames.length) {"
+        "  const frame = frames[frames.length - 1];"
+        "  frame.scrollTop = frame.scrollHeight;"
+        "}"
+        "</script>"
+    )
     st.markdown("".join(parts), unsafe_allow_html=True)
 
 

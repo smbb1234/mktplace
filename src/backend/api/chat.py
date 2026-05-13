@@ -9,6 +9,8 @@ from src.backend.services.ai.conversation_orchestrator import (
     add_message,
     update_preferences,
     get_preferences,
+    set_last_question_key,
+    get_last_question_key,
 )
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -26,27 +28,28 @@ def _catalog_options(field_name: str) -> list[str]:
     return sorted(values)
 
 
-def _build_next_reply(preferences: dict) -> tuple[str, list[str] | None]:
+def _build_next_reply(preferences: dict) -> tuple[str, list[str] | None, str | None]:
     if not preferences.get("monthly_budget"):
-        return "Hi! Great to meet you. To begin, what monthly budget feels comfortable?", None
+        return "Hi! Great to meet you. To begin, what monthly budget feels comfortable?", None, "monthly_budget"
 
     if not preferences.get("fuel_type"):
         fuel_options = _catalog_options("fuel_type")
-        return "Nice — what fuel type would you like?", fuel_options or None
+        return "Nice — what fuel type would you like?", fuel_options or None, "fuel_type"
 
     if not preferences.get("body_type"):
         body_options = _catalog_options("body_type")
-        return "Great choice. What body style suits you best?", body_options or None
+        return "Great choice. What body style suits you best?", body_options or None, "body_type"
 
     if not preferences.get("transmission"):
         transmission_options = _catalog_options("transmission")
-        return "Perfect. Do you prefer automatic or manual transmission?", transmission_options or None
+        return "Perfect. Do you prefer automatic or manual transmission?", transmission_options or None, "transmission"
 
     if not preferences.get("family_size"):
-        return "How many seats do you usually need?", None
+        return "How many seats do you usually need?", None, "family_size"
 
     return (
         "Awesome — I have enough to start matching cars. I’ll keep refining with a couple more questions if needed.",
+        None,
         None,
     )
 
@@ -60,12 +63,13 @@ def post_message(payload: ChatMessage):
     add_message(session_id, payload.message)
     prefs = extract_preferences_from_text(payload.message)
     existing = get_preferences(session_id)
+    last_question_key = get_last_question_key(session_id)
     # Context-aware fallback: if the assistant is collecting seats and the
     # user replies with just a number (e.g., "5"), treat it as family size.
     if (
         "family_size" not in prefs
         and existing.get("family_size") is None
-        and existing.get("transmission")
+        and (existing.get("transmission") or last_question_key == "family_size")
     ):
         stripped = payload.message.strip()
         if stripped.isdigit():
@@ -74,7 +78,8 @@ def post_message(payload: ChatMessage):
                 prefs["family_size"] = value
     update_preferences(session_id, prefs)
     current = get_preferences(session_id)
-    reply, quick_replies = _build_next_reply(current)
+    reply, quick_replies, next_question_key = _build_next_reply(current)
+    set_last_question_key(session_id, next_question_key)
     return ChatResponse(
         session_id=session_id,
         reply=reply,
