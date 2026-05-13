@@ -118,7 +118,7 @@ def post_message(payload: ChatMessage):
         return ChatResponse(
             session_id=session_id,
             reply=(
-                "Ohh.. Unfortunately, we don’t currently have any vehicles that match these criteria. "
+                "Unfortunately, we don’t currently have any vehicles that match these criteria. "
                 "Let’s review your preferences and see if we can find a suitable alternative.\n\n"
                 "What type of fuel would you prefer for your next vehicle?"
             ),
@@ -128,7 +128,7 @@ def post_message(payload: ChatMessage):
     statement = STATEMENTS_BY_KEY.get(previous_key)
     if statement:
         current_reply, _, _ = _build_next_reply(current)
-        reply = f"{statement}\n\n\n{current_reply}"
+        reply = f"{statement}\n\n{current_reply}"
         next_question_key = _build_next_reply(current)[2]
         quick_replies = None
     else:
