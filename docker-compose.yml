@@ -66,7 +66,13 @@ services:
       - chroma_data:/chroma/chroma
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/ || exit 1"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys, urllib.request; urls=['http://localhost:8000/api/v2/heartbeat','http://localhost:8000/api/v1/heartbeat','http://localhost:8000/']; ok=False\nfor u in urls:\n    try:\n        with urllib.request.urlopen(u, timeout=3) as r:\n            if r.status < 500:\n                ok=True\n                break\n    except Exception:\n        pass\nsys.exit(0 if ok else 1)",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
