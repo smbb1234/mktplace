@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from fastapi import APIRouter, HTTPException
 from src.backend.schemas.chat import ChatMessage, ChatResponse
 from src.backend.services.ai.preference_extractor import extract_preferences_from_text
@@ -11,6 +12,8 @@ from src.backend.services.ai.conversation_orchestrator import (
     get_preferences,
     set_last_question_key,
     get_last_question_key,
+    set_last_question_asked_at,
+    get_last_question_asked_at,
 )
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -28,27 +31,43 @@ def _catalog_options(field_name: str) -> list[str]:
     return sorted(values)
 
 
-def _build_next_reply(preferences: dict) -> tuple[str, list[str] | None, str | None]:
-    if not preferences.get("monthly_budget"):
-        return "Hi! Great to meet you. To begin, what monthly budget feels comfortable?", None, "monthly_budget"
+QUESTION_SEQUENCE: list[tuple[str, str]] = [
+    ("fuel_type", "What type of fuel would you prefer for your next vehicle?"),
+    ("transmission", "Do you have a preferred transmission type?"),
+    ("mileage_range", "What mileage range would you ideally like?"),
+    ("doors", "How many doors would you prefer?"),
+    ("seats", "How many seats do you need?"),
+    ("monthly_from_gbp", "What monthly budget would you like to stay within?"),
+    ("deposit_gbp", "How much deposit would you ideally like to put down?"),
+    ("term_months", "What finance term would suit you best?"),
+    ("annual_mileage_limit", "Roughly how many miles do you expect to drive each year?"),
+    ("employment_status", "What is your current employment status?"),
+    ("part_exchange", "Do you have a vehicle you would like to part exchange?"),
+    ("callback_opt_in", "When would you ideally like to place your order, I can arrange a callback?"),
+]
 
+STATEMENTS_BY_KEY = {
+    "transmission": "That makes sense. I’ll use your preferences to find vehicles that feel practical and suitable for your needs.",
+    "doors": "That makes sense. I’ll use your preferences to find vehicles that feel practical and suitable for your needs.",
+    "monthly_from_gbp": "Nice preference — that helps me narrow down the best matches for you much more accurately.",
+    "term_months": "I like that choice. It gives us a good balance between budget, comfort, and everyday usability.",
+    "employment_status": "Perfect, that’s helpful. I’ll keep your budget in mind and avoid showing options that feel unrealistic.",
+}
+
+
+def _build_next_reply(preferences: dict) -> tuple[str, list[str] | None, str | None]:
     if not preferences.get("fuel_type"):
         fuel_options = _catalog_options("fuel_type")
-        return "Nice — what fuel type would you like?", fuel_options or None, "fuel_type"
-
-    if not preferences.get("body_type"):
-        body_options = _catalog_options("body_type")
-        return "Great choice. What body style suits you best?", body_options or None, "body_type"
-
+        return QUESTION_SEQUENCE[0][1], fuel_options or None, "fuel_type"
     if not preferences.get("transmission"):
         transmission_options = _catalog_options("transmission")
-        return "Perfect. Do you prefer automatic or manual transmission?", transmission_options or None, "transmission"
-
-    if not preferences.get("family_size"):
-        return "How many seats do you usually need?", None, "family_size"
+        return QUESTION_SEQUENCE[1][1], transmission_options or None, "transmission"
+    for key, question in QUESTION_SEQUENCE[2:]:
+        if preferences.get(key) in (None, ""):
+            return question, None, key
 
     return (
-        "Awesome — I have enough to start matching cars. I’ll keep refining with a couple more questions if needed.",
+        "It was a great experience talking to you conversation, Thank you!",
         None,
         None,
     )
@@ -64,21 +83,30 @@ def post_message(payload: ChatMessage):
     prefs = extract_preferences_from_text(payload.message)
     existing = get_preferences(session_id)
     last_question_key = get_last_question_key(session_id)
-    # Context-aware fallback: if the assistant is collecting seats and the
-    # user replies with just a number (e.g., "5"), treat it as family size.
-    if (
-        "family_size" not in prefs
-        and existing.get("family_size") is None
-        and (existing.get("transmission") or last_question_key == "family_size")
-    ):
-        stripped = payload.message.strip()
-        if stripped.isdigit():
-            value = int(stripped)
-            if 1 <= value <= 9:
-                prefs["family_size"] = value
+    if last_question_key:
+        prefs[last_question_key] = prefs.get(last_question_key) or payload.message.strip()
+        if last_question_key in {"doors", "seats", "term_months", "annual_mileage_limit"} and str(payload.message).strip().isdigit():
+            prefs[last_question_key] = int(str(payload.message).strip())
+        if last_question_key in {"monthly_from_gbp", "deposit_gbp"}:
+            digits = "".join(ch for ch in payload.message if ch.isdigit())
+            if digits:
+                prefs[last_question_key] = float(digits)
     update_preferences(session_id, prefs)
     current = get_preferences(session_id)
-    reply, quick_replies, next_question_key = _build_next_reply(current)
+    previous_key = last_question_key
+    statement = STATEMENTS_BY_KEY.get(previous_key)
+    if statement:
+        current_reply, _, _ = _build_next_reply(current)
+        reply = f"{statement}\n\n{current_reply}"
+        next_question_key = _build_next_reply(current)[2]
+        quick_replies = None
+    else:
+        reply, quick_replies, next_question_key = _build_next_reply(current)
+    now = time.time()
+    if now - get_last_question_asked_at(session_id) < 2 and next_question_key is not None:
+        reply = "Give me a moment while I filter the latest results for you."
+    elif next_question_key is not None:
+        set_last_question_asked_at(session_id, now)
     set_last_question_key(session_id, next_question_key)
     return ChatResponse(
         session_id=session_id,
@@ -86,8 +114,16 @@ def post_message(payload: ChatMessage):
         intent=current.get("intent"),
         monthly_budget=current.get("monthly_budget"),
         fuel_type=current.get("fuel_type"),
-        body_type=current.get("body_type"),
         transmission=current.get("transmission"),
-        family_size=current.get("family_size"),
+        seats=current.get("seats"),
+        doors=current.get("doors"),
+        mileage_range=current.get("mileage_range"),
+        monthly_from_gbp=current.get("monthly_from_gbp"),
+        deposit_gbp=current.get("deposit_gbp"),
+        term_months=current.get("term_months"),
+        annual_mileage_limit=current.get("annual_mileage_limit"),
+        employment_status=current.get("employment_status"),
+        part_exchange=current.get("part_exchange"),
+        callback_opt_in=current.get("callback_opt_in"),
         quick_replies=quick_replies,
     )

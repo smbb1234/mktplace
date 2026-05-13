@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, Any
+import time
 
 # Minimal in-memory orchestrator for sessions (demo-only)
 _SESSIONS: Dict[str, Dict[str, Any]] = {}
@@ -16,6 +17,7 @@ def create_or_get_session(session_id: str | None) -> Dict[str, Any]:
         "preferences": {},
         "messages": [],
         "last_question_key": None,
+        "last_question_asked_at": 0.0,
     }
     return _SESSIONS[sid]
 
@@ -43,3 +45,13 @@ def set_last_question_key(session_id: str, key: str | None) -> None:
 def get_last_question_key(session_id: str) -> str | None:
     s = create_or_get_session(session_id)
     return s.get("last_question_key")
+
+
+def set_last_question_asked_at(session_id: str, timestamp: float | None = None) -> None:
+    s = create_or_get_session(session_id)
+    s["last_question_asked_at"] = timestamp if timestamp is not None else time.time()
+
+
+def get_last_question_asked_at(session_id: str) -> float:
+    s = create_or_get_session(session_id)
+    return float(s.get("last_question_asked_at", 0.0))
