@@ -55,6 +55,24 @@ STATEMENTS_BY_KEY = {
 }
 
 
+def _has_matching_inventory(preferences: dict) -> bool:
+    try:
+        catalog = get_default_catalog()
+        for vehicle in catalog.vehicles.values():
+            if preferences.get("fuel_type") and str(getattr(vehicle, "fuel_type", "")).lower() != str(preferences["fuel_type"]).lower():
+                continue
+            if preferences.get("transmission") and str(getattr(vehicle, "transmission", "")).lower() != str(preferences["transmission"]).lower():
+                continue
+            if preferences.get("doors") and int(getattr(vehicle, "doors", 0) or 0) != int(preferences["doors"]):
+                continue
+            if preferences.get("seats") and int(getattr(vehicle, "seats", 0) or 0) != int(preferences["seats"]):
+                continue
+            return True
+    except Exception:
+        return True
+    return False
+
+
 def _build_next_reply(preferences: dict) -> tuple[str, list[str] | None, str | None]:
     if not preferences.get("fuel_type"):
         fuel_options = _catalog_options("fuel_type")
@@ -93,17 +111,30 @@ def post_message(payload: ChatMessage):
                 prefs[last_question_key] = float(digits)
     update_preferences(session_id, prefs)
     current = get_preferences(session_id)
+    if not _has_matching_inventory(current):
+        current.clear()
+        set_last_question_key(session_id, "fuel_type")
+        set_last_question_asked_at(session_id, time.time())
+        return ChatResponse(
+            session_id=session_id,
+            reply=(
+                "Ohh.. Unfortunately, we don’t currently have any vehicles that match these criteria. "
+                "Let’s review your preferences and see if we can find a suitable alternative.\n\n"
+                "What type of fuel would you prefer for your next vehicle?"
+            ),
+            quick_replies=_catalog_options("fuel_type") or None,
+        )
     previous_key = last_question_key
     statement = STATEMENTS_BY_KEY.get(previous_key)
     if statement:
         current_reply, _, _ = _build_next_reply(current)
-        reply = f"{statement}\n\n{current_reply}"
+        reply = f"{statement}\n\n\n{current_reply}"
         next_question_key = _build_next_reply(current)[2]
         quick_replies = None
     else:
         reply, quick_replies, next_question_key = _build_next_reply(current)
     now = time.time()
-    if now - get_last_question_asked_at(session_id) < 2 and next_question_key is not None:
+    if now - get_last_question_asked_at(session_id) < 4 and next_question_key is not None:
         reply = "Give me a moment while I filter the latest results for you."
     elif next_question_key is not None:
         set_last_question_asked_at(session_id, now)
