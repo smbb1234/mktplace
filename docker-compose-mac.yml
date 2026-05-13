@@ -1,0 +1,94 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: car_mvp_backend
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app:cached
+      - ./data:/app/data:cached
+      - ./assets:/app/assets:cached
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: car_mvp_frontend
+    env_file:
+      - .env.docker
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app:cached
+      - ./data:/app/data:cached
+      - ./assets:/app/assets:cached
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+
+  postgres:
+    image: postgres:16
+    container_name: car_mvp_postgres
+    env_file:
+      - .env.docker
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER:-car_user}\" -d \"$${POSTGRES_DB:-car_mvp}\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: car_mvp_chroma
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
+    init: true
+
+  portainer:
+    image: portainer/portainer-ce:sts
+    container_name: car_mvp_portainer
+    ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  chroma_data:
+  portainer_data:
