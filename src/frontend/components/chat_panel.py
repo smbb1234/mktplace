@@ -121,37 +121,23 @@ def _render_messages_frame(messages: list[dict[str, Any]]) -> None:
         components.html(
             """
             <script>
-            const stateKey = "__chat_scroll_state";
             const root = window.parent;
-            root[stateKey] = root[stateKey] || { stickToBottom: true, lastMessageCount: 0 };
-            const state = root[stateKey];
-
             const frames = root.document.querySelectorAll('.chat-scroll-frame');
             if (!frames.length) return;
             const frame = frames[frames.length - 1];
 
-            const threshold = 24;
-            const distanceFromBottom = frame.scrollHeight - frame.scrollTop - frame.clientHeight;
-            if (distanceFromBottom > threshold) {
-              state.stickToBottom = false;
-            } else if (distanceFromBottom <= 2) {
-              state.stickToBottom = true;
-            }
+            const forceBottom = () => { frame.scrollTop = frame.scrollHeight; };
+            forceBottom();
+            requestAnimationFrame(forceBottom);
+            setTimeout(forceBottom, 50);
+            setTimeout(forceBottom, 150);
+            setTimeout(forceBottom, 300);
 
-            if (!frame.dataset.scrollBound) {
-              frame.addEventListener('scroll', () => {
-                const gap = frame.scrollHeight - frame.scrollTop - frame.clientHeight;
-                state.stickToBottom = gap <= threshold;
-              });
-              frame.dataset.scrollBound = "1";
+            if (!frame.dataset.observeBottom) {
+              const observer = new MutationObserver(() => forceBottom());
+              observer.observe(frame, { childList: true, subtree: true, characterData: true });
+              frame.dataset.observeBottom = "1";
             }
-
-            const currentCount = Number(frame.dataset.messageCount || "0");
-            const hasNewMessages = currentCount > (state.lastMessageCount || 0);
-            if (state.stickToBottom || hasNewMessages && state.stickToBottom !== false) {
-              frame.scrollTop = frame.scrollHeight;
-            }
-            state.lastMessageCount = currentCount;
             </script>
             """,
             height=0,
