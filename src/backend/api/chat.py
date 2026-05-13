@@ -109,6 +109,10 @@ def post_message(payload: ChatMessage):
             digits = "".join(ch for ch in payload.message if ch.isdigit())
             if digits:
                 prefs[last_question_key] = float(digits)
+            # Ignore generic monthly budget extraction when answering explicit pricing questions.
+            prefs.pop("monthly_budget", None)
+        if last_question_key != "monthly_budget":
+            prefs.pop("monthly_budget", None)
     update_preferences(session_id, prefs)
     current = get_preferences(session_id)
     if not _has_matching_inventory(current):
@@ -135,7 +139,7 @@ def post_message(payload: ChatMessage):
         reply, quick_replies, next_question_key = _build_next_reply(current)
     now = time.time()
     if now - get_last_question_asked_at(session_id) < 4 and next_question_key is not None:
-        reply = "Give me a moment while I filter the latest results for you."
+        reply = f"Give me a moment while I filter the latest results for you. {reply}"
     elif next_question_key is not None:
         set_last_question_asked_at(session_id, now)
     set_last_question_key(session_id, next_question_key)
@@ -143,7 +147,7 @@ def post_message(payload: ChatMessage):
         session_id=session_id,
         reply=reply,
         intent=current.get("intent"),
-        monthly_budget=current.get("monthly_budget"),
+        monthly_budget=current.get("monthly_from_gbp") or current.get("monthly_budget"),
         fuel_type=current.get("fuel_type"),
         transmission=current.get("transmission"),
         seats=current.get("seats"),
