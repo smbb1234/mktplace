@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Initializing database inside backend container (SQLAlchemy create_all)..."
+echo "Initializing database inside app container (SQLAlchemy create_all)..."
 
 # Prefer docker compose v2; fallback to v1 if needed
 if command -v docker &>/dev/null && docker compose version &>/dev/null; then
@@ -13,6 +13,6 @@ else
 	exit 1
 fi
 
-"${DOCKER_COMPOSE[@]}" exec backend python -m src.backend.scripts.init_db
+"${DOCKER_COMPOSE[@]}" exec app python -m src.backend.scripts.init_db
 
 echo "init_db completed"
