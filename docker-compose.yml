@@ -1,13 +1,19 @@
 services:
-  backend:
+  app:
     build:
       context: .
-      dockerfile: docker/Dockerfile.backend.mac
-    container_name: car_mvp_backend
+      dockerfile: docker/Dockerfile
+    container_name: car_mvp_app
     env_file:
       - .env.docker
+    environment:
+      - PYTHONPATH=/app
+      - FASTAPI_HOST=127.0.0.1
+      - FASTAPI_BIND_HOST=0.0.0.0
+      - STREAMLIT_BIND_HOST=0.0.0.0
     ports:
       - "8000:8000"
+      - "8501:8501"
     volumes:
       - .:/app:cached
       - ./data:/app/data:cached
@@ -23,33 +29,12 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health'); urllib.request.urlopen('http://localhost:8501/_stcore/health')\" || exit 1"
         ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
-
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.frontend.mac
-    container_name: car_mvp_frontend
-    env_file:
-      - .env.docker
-    environment:
-      - PYTHONPATH=/app
-    ports:
-      - "8501:8501"
-    volumes:
-      - .:/app:cached
-      - ./data:/app/data:cached
-      - ./assets:/app/assets:cached
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    init: true
 
   postgres:
     image: postgres:16
