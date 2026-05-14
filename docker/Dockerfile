@@ -10,27 +10,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    gcc \
     curl \
-    ca-certificates \
-    openssl \
-    libpq-dev \
-    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
-RUN python -m pip install --upgrade \
-    --trusted-host pypi.org \
-    --trusted-host files.pythonhosted.org \
-    pip \
-    setuptools \
-    wheel \
-    certifi \
-    && python -m pip install --no-cache-dir \
-    --trusted-host pypi.org \
-    --trusted-host files.pythonhosted.org \
-    -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
 COPY . .
 
