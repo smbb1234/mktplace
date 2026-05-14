@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/Dockerfile.mac
     container_name: car_mvp_app
     env_file:
       - .env.docker
