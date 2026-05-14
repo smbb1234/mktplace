@@ -32,10 +32,10 @@ Run integration tests locally with:
 python -m pytest tests/integration
 ```
 
-For the most realistic integration environment, run the same command inside the backend container after Docker Compose starts Postgres and service environment variables:
+For the most realistic integration environment, run the same command inside the combined app container after Docker Compose starts Postgres and service environment variables:
 
 ```bash
-docker compose exec backend python -m pytest tests/integration
+docker compose exec app python -m pytest tests/integration
 ```
 
 ### End-to-end tests
@@ -51,7 +51,7 @@ python -m pytest tests/e2e
 Run them in the Docker stack for the closest match to the expected local runtime:
 
 ```bash
-docker compose exec backend python -m pytest tests/e2e
+docker compose exec app python -m pytest tests/e2e
 ```
 
 ## Which tests need Docker?
@@ -100,7 +100,8 @@ python -m pytest tests/unit
    POSTGRES_DB=mktplace
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=postgres
-   FASTAPI_HOST=0.0.0.0
+   # The app binds FastAPI to 0.0.0.0 internally; this host is used by the colocated Streamlit client.
+   FASTAPI_HOST=127.0.0.1
    FASTAPI_PORT=8000
    STREAMLIT_HOST=0.0.0.0
    STREAMLIT_PORT=8501
@@ -124,10 +125,10 @@ python -m pytest tests/unit
    docker compose ps
    ```
 
-4. Run tests inside the backend container:
+4. Run tests inside the combined app container:
 
    ```bash
-   docker compose exec backend python -m pytest tests/unit tests/integration tests/e2e
+   docker compose exec app python -m pytest tests/unit tests/integration tests/e2e
    ```
 
 5. Validate backend endpoints from the host:
@@ -169,7 +170,7 @@ Recommended handling:
 - From Docker, flush with:
 
   ```bash
-  docker compose exec backend python -m src.backend.scripts.flush_offline_enquiries
+  docker compose exec app python -m src.backend.scripts.flush_offline_enquiries
   ```
 
 - Or use the admin API route:

@@ -20,7 +20,7 @@ When running the full Docker stack:
 
 ## Docker-first quickstart
 
-Docker Compose is the recommended local runtime because it starts the frontend, backend, Postgres, ChromaDB, and Portainer with the same service names the containers expect.
+Docker Compose is the recommended local runtime because it starts the combined app container (FastAPI backend + Streamlit frontend), Postgres, ChromaDB, and Portainer with the same service names the containers expect.
 
 1. Create `.env.docker`:
 
@@ -31,7 +31,9 @@ Docker Compose is the recommended local runtime because it starts the frontend, 
    POSTGRES_DB=mktplace
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=postgres
-   FASTAPI_HOST=0.0.0.0
+   # The combined Docker app binds FastAPI to 0.0.0.0 internally and
+   # sets FASTAPI_HOST=127.0.0.1 for frontend-to-backend calls.
+   FASTAPI_HOST=127.0.0.1
    FASTAPI_PORT=8000
    STREAMLIT_HOST=0.0.0.0
    STREAMLIT_PORT=8501
@@ -55,8 +57,7 @@ Docker Compose is the recommended local runtime because it starts the frontend, 
 
    ```bash
    docker compose ps
-   docker compose logs -f backend
-   docker compose logs -f frontend
+   docker compose logs -f app
    docker compose logs -f postgres
    ```
 
@@ -69,6 +70,28 @@ Docker Compose is the recommended local runtime because it starts the frontend, 
    # Optional destructive cleanup of DB/vector/Portainer volumes:
    docker compose down -v
    ```
+
+
+### Automatic Docker Compose refresh on code changes
+
+If you want the whole Docker stack to restart whenever project code or configuration changes, run this watcher in a separate terminal:
+
+```bash
+scripts/auto-refresh-compose.sh
+```
+
+The watcher polls `src`, `app`, `docker`, `scripts`, `requirements.txt`, Compose files, `.env.example`, `README.md`, and `docs` by default. On a change it runs:
+
+```bash
+docker compose down
+docker compose up -d --build
+```
+
+You can tune it with environment variables, for example:
+
+```bash
+POLL_INTERVAL=5 WATCH_PATHS="src docker docker-compose.yml" scripts/auto-refresh-compose.sh
+```
 
 ## Local quick test commands
 
@@ -95,7 +118,7 @@ Run this sequence to validate the application in its recommended Docker environm
 ```bash
 docker compose up -d --build
 docker compose ps
-docker compose exec backend python -m pytest tests/unit tests/integration tests/e2e
+docker compose exec app python -m pytest tests/unit tests/integration tests/e2e
 curl -f http://localhost:8000/health
 curl -f http://localhost:8000/catalog/
 curl -f -X POST http://localhost:8000/chat/message \
@@ -129,7 +152,8 @@ See `docs/frontend-ui.md` for a fuller UI map and `docs/testing.md` for test str
 
 ## Operational notes
 
-- Source code, data, and assets are mounted into the containers via volumes, so local edits are reflected in running containers.
-- Backend uses `uvicorn --reload`; frontend Streamlit reloads on source changes.
+- Source code, data, and assets are mounted into the app container via volumes, so local edits are reflected in the running container.
+- FastAPI and Streamlit are packaged together in `docker/Dockerfile` and run in the single `app` Compose service while still exposing host ports `8000` and `8501`.
+- Backend uses `uvicorn --reload`; frontend Streamlit reloads on source changes. Use `scripts/auto-refresh-compose.sh` if you want code/configuration changes to trigger a full `docker compose down` followed by `docker compose up -d --build`.
 - Inventory CSV defaults to `data/dataset.csv`; car images are served from `assets/` where available.
-- If Postgres is unavailable during enquiry submission, the API queues the enquiry in `data/offline_enquiries.jsonl` and returns HTTP `202`. Flush queued enquiries after Postgres is restored with `docker compose exec backend python -m src.backend.scripts.flush_offline_enquiries` or `POST /admin/flush_offline`.
+- If Postgres is unavailable during enquiry submission, the API queues the enquiry in `data/offline_enquiries.jsonl` and returns HTTP `202`. Flush queued enquiries after Postgres is restored with `docker compose exec app python -m src.backend.scripts.flush_offline_enquiries` or `POST /admin/flush_offline`.
